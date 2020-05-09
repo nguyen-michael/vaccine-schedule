@@ -1,0 +1,227 @@
+Each vaccine is it's own "definition". This allows it to be modified if CDC regulations change.
+Currently concerned with only the 
+---
+Input and Return
+___
+
+Takes in Obj:
+{
+    birthdate: Date,
+    vaccinationDates: [Date, ...],
+    options: Object
+}
+
+birthdate: A Date. The date of birth of the patient.
+vaccinationDates: Array of dates of vaccination. Can be empty in case of no vaccination.
+options: pass in type of vaccine for the ones that have multiple paths. This can be optional.
+
+Returns object:
+{
+    vaccinationSchedule: [{Dose Information}, ...],
+    messages: {Strings, ...}
+}
+
+vaccinationSchedule: An array of objects of the form
+    {
+        dose: Int, (order of dose),
+        date: Date, (date of dose, or proposed date of dose),
+        reccommendedDate: Date, (dictated by vaccine settings),
+        received: Boolean, (Did patient receive this dose already?),
+        ageReceived: Date, (If received, Calculate ageReceived, null if not received),
+        interval: Date, (Time delta since previous dose, if any. If no previous dose and is dose1, default to time delta since birthdate. Null if not given.),
+        minInterval: Date, (Time delta, min accepted value for interval, declared by specific functions, min age for dose1 is it's minInterval)
+        late: Boolean, (If it's late per the schedule),
+        early: Boolean, (If it's too early, before min age or inside min interval, (technically equiv?)),
+        notes: String, (Any notes, messages regarding this particular dose)
+    },
+messages: any error flags, notices for entire vaccine. Notes may go here.
+
+It can return a complete array of all doses, to display future/needed doses.
+?Return class object via constructor.?
+    - Might not be neccesary, we can figure out later
+
+?Required flag?
+
+---
+General Flow
+___
+
+- Take in the obj
+- Calculate age (Now - birthdate)
+- Doses received = Length of date array
+- Makes sure the dates in the vaccinationDates array are sorted
+- Makes sure the birthdate and dose dates make sense (return an error of it doesn't)
+    - i.e. DOB after a date of vaccination.
+    - this can be guarded against during the data input from the front end.
+- Parse date array (if any, case of no vaccination, e.g.) into vaccinationSchedule object.
+    - Map array to array of objects
+    - Calculate based on current, birth and declared dates
+    - Calculate intervals for received doses
+    - Declare messages or notes for all doses
+- Parse vaccinationSchedule array in specific function per vaccine (see below)
+- Pack any messages and objects and returns.
+
+-- specific functions for each vaccine 
+-- each vaccine can have it's own settings, like time series for CDC rec doses
+
+Each one will
+- If next dose is overdue and min interval passes
+    - set date as current date
+        - Successive doses can be based off that date
+    - notate in messages
+    - raise late flag
+- Declare dates for unreceived doses, based on their respective dose series
+- (Run specific functions)
+- After running specific functions:
+    - Compare intervals and minIntervals and raise early flags if needed
+
+-? we can check if any is given at all, if none, we can return the recommended schedule based on vaccine settings
+    -? This can include a fallback schedule, start today etc.
+
+-? When to check if dose is received?
+
+-? Check for holes in some of the larger conditions like HiB 59.5M, 11.5M etc
+
+
+- Hepatitis A
+- Recommended: 12M, 18M
+    - Set Dose1.minInterval = 12M
+    - Set Dose2.minInterval = 6M
+    - If more than 2 doses received:
+        - notate in messages
+
+- Hepatitis B
+- Recommended: 0, 1-2M, 6-18M
+    - Set Dose2.minInterval = 4W
+    - Set Dose3.minInterval = 8W
+    - If more than 3 doses received:
+        - notate in messages: 4 doses permissible if used in mixed vaccines
+    - If Dose3.received && (Dose3.ageReceived) < 24 weeks || (Dose3.ageReceived - Dose1.ageReceived) < 16W:
+        - raise early flag
+        - notate in dose notes
+        - notate in messages: Dose3 too early and/or too close to Dose1
+
+- DTAP
+- Recommended: 2M, 4M, 6M, 15-18M, 4-6Y
+    - Set Dose1.minInterval = 6W
+    - Set Dose2.minInterval = 4W
+    - Set Dose3.minInterval = 4W
+    - Set Dose4.minInterval = 6M
+    - Set Dose5.minInterval = 6M
+    - If more than 5 doses received:
+        - notate in messages
+    - If Dose4.interval >= 6M && Dose4.ageReceived >= 4Y:
+        - notate in messages: Dose5 not needed. Done with vaccination series
+        - notate in dose notes
+        - set flags of following doses as needed
+
+- HiB
+- Recommended: 2M, 4M, 6M (HiB-PRP-T), 12-15M
+    - Set flag: PRP-OMP or PRP-T or Unknown
+    - Set Dose1.minInterval = 6W
+    - If Dose2.received && (Dose1.ageReceived >= 15M || Dose2.ageReceived >= 15M):
+        - notate in messages: no further doses needed. Done with vaccination series
+        - notate in dose notes
+        - set flags as neccesary in following doses
+    - If (Dose1.ageReceived <= 12M):
+        - Set Dose2.minInterval = 4W
+    - Else If (Dose1.ageReceived >= 12M && Dose1.ageReceived <= 14M):
+        - Set Dose2.minInterval = 8W
+        - Notate in messages: no further doses after dose2 needed.
+        - set flags as neccesary
+        - notate in dose notes
+    - If (Age < 12M && Dose1.ageReceived < 7M && !PRP-OMP):
+        - Set Dose3.minInterval = 4W
+    - Else If (Age < 12M && (Dose1.ageReceived >= 7M && Dose1.ageReceived <= 11M)) || (Age >= 12M && Age <= 59M && Dose1.ageReceived < 12M && Dose2.ageReceived < 15M) || (PRP-OMP && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M):
+        - Set Dose3.minInterval = 8W
+        - Notate in messages: no further doses after dose3 needed.
+        - set flags as neccesary
+        - notate in dose notes
+    - If (Age >= 12M && Age <= 59M && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M && Dose3.ageReceived < 12M):
+        - Set Dose4.minInterval = 8W
+    - If (Age > 60M && !Dose1.received):
+        - Notate in messages: Too late for series. No further vaccination required.
+        - set flags as needed on all further vaccinations
+    - If More than 4 doses received:
+        - notate in messages
+    - If More than 3 doses received && PRP-OMP:
+        - notate in messages
+    
+- IPV
+- Recommended: 2M, 4M, 6-18M, 4-6Y
+    - Set Dose1.minInterval = 6W
+    - Set Dose2.minInterval = 4W
+    - If (Age < 48M):
+        - Set Dose3.minInterval = 4W
+    - Else If (Age >= 48M):
+        - Set Dose3.minInterval = 6M
+    - If (Dose4.ageReceived < 48M):
+        - raise early flag
+        - notate in dose notes
+        - notate in messages: Dose4 too early, min age 4 years
+    - If more than 4 doses received:
+        - notate in messages
+
+- MMR
+- Recommended: 12-15M, 4-6Y
+    - Set Dose1.minInterval = 12M
+    - Set Dose2.minInterval = 4W
+    - If more than 2 doses received:
+        - notate in messages
+
+- Varicella
+- Recommended: 12-15M, 4-6Y
+    - Set Dose1.minInterval = 12M
+    - Set Dose2.minInterval = 3M
+    - If (Dose2.interval < 4W):
+        - raise early flag
+    - Else If (Dose2.interval >= 4 && Dose2.interval < 3M):
+        - raise early flag
+        - notate in messages: dose2 may be counted even if early.
+    - If more than 2 doses received:
+        - notate in messages
+
+- PCV13
+- Recommended: 2M, 4M, 6M, 12-15M
+    - Set Dose1.minInterval = 6W
+    - If (Dose1.ageReceived >= 24M || Dose2.ageReceived >= 24):
+        - Notate in messages: no further doses needed.
+        - set flags as neccesary
+        - notate in dose notes
+    - If (Dose1.ageReceived < 12M):
+        - Set Dose2.minInterval = 4W
+    - Else If (Dose1.ageReceived >= 12M):
+        - Set Dose2.minInterval = 8W
+        - Notate in messages: no further dose neccesary after dose 2
+    - If (Age < 12M && Dose2.ageReceived < 7M):
+        - Set Dose3.minInterval = 4W
+    - Else If (Dose2.ageReceived >= 7M && Dose2.ageReceived < 11M):
+        - Set Dose3.minInterval = 12M - Age <= 8W ? 8W : 12M - Age
+    - If (Age > 12M && [Any Dose Given].ageReceived < 12M):
+        - Reset Dose2.minInterval = 8W
+        - Reset Dose3.minInterval = 8W
+    - If (Age >= 12M && Age < 59M && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M && Dose3.ageReceived < 12M):
+        - Set Dose4.minInterval = 8W  
+    - If (Age >= 60M):
+        - Notate in messages: No Further Doses needed unless high risk.
+        - Notate in dose notes
+        - Set Flags as needed
+    - If more than 4 doses received:
+        - notate in messages
+
+- Rotavirus
+- Recommended: 2M, 4M, 6M (RotaTeq)
+    - Set flag: Rotarix or Rotateq or unknown
+        - Default to 3 Series (Rotateq) if unknown.
+    - Set Dose1.minInterval = 6W
+    - Set Dose2.minInterval = 4W
+    - If (Rotateq || Unknown):
+        - Set Dose3.minInterval = 4W
+    - If (Age > 8M):
+        - Notate in messages: No Further Doses needed
+        - Notate in dose notes
+        - Set Flags as needed
+    - If more than 3 doses received && (Rotateq || Unknown):
+        - notate in messages
+    - If more than 2 doses received && (Rotarix):
+        - notate in messages
