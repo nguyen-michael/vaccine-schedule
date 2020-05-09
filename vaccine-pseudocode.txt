@@ -32,29 +32,31 @@ vaccinationSchedule: An array of objects of the form
         minInterval: Date, (Time delta, min accepted value for interval, declared by specific functions, min age for dose1 is it's minInterval)
         late: Boolean, (If it's late per the schedule),
         early: Boolean, (If it's too early, before min age or inside min interval, (technically equiv?)),
+        required: Boolean, (Default true, If not required, set to false, per CDC guideline)
         notes: String, (Any notes, messages regarding this particular dose)
     },
 messages: any error flags, notices for entire vaccine. Notes may go here.
 
 It can return a complete array of all doses, to display future/needed doses.
+
 ?Return class object via constructor.?
     - Might not be neccesary, we can figure out later
-
-?Required flag?
 
 ---
 General Flow
 ___
 
-- Take in the obj
-- Calculate age (Now - birthdate)
-- Doses received = Length of date array
+Preprocessing (can be done inside specific function to receive info such as rec dates):
+- Take in the obj, Preprocessing can expand the object to pass into the specific functions
+- Set Age = (Now - birthdate)
+- Set Doses received = Length of date array
 - Makes sure the dates in the vaccinationDates array are sorted
 - Makes sure the birthdate and dose dates make sense (return an error of it doesn't)
     - i.e. DOB after a date of vaccination.
     - this can be guarded against during the data input from the front end.
 - Parse date array (if any, case of no vaccination, e.g.) into vaccinationSchedule object.
     - Map array to array of objects
+    - Set Received flag for given doses
     - Calculate based on current, birth and declared dates
     - Calculate intervals for received doses
     - Declare messages or notes for all doses
@@ -74,11 +76,12 @@ Each one will
 - (Run specific functions)
 - After running specific functions:
     - Compare intervals and minIntervals and raise early flags if needed
+    - Finalize everything before returning
 
 -? we can check if any is given at all, if none, we can return the recommended schedule based on vaccine settings
     -? This can include a fallback schedule, start today etc.
+    - Sounds good.
 
--? When to check if dose is received?
 
 -? Check for holes in some of the larger conditions like HiB 59.5M, 11.5M etc
 
@@ -132,14 +135,14 @@ Each one will
         - notate in dose notes
     - If (Age < 12M && Dose1.ageReceived < 7M && !PRP-OMP):
         - Set Dose3.minInterval = 4W
-    - Else If (Age < 12M && (Dose1.ageReceived >= 7M && Dose1.ageReceived <= 11M)) || (Age >= 12M && Age <= 59M && Dose1.ageReceived < 12M && Dose2.ageReceived < 15M) || (PRP-OMP && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M):
+    - Else If (Age < 12M && (Dose1.ageReceived >= 7M && Dose1.ageReceived < 12M)) || (Age >= 12M && Age <= 59M && Dose1.ageReceived < 12M && Dose2.ageReceived < 15M) || (PRP-OMP && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M):
         - Set Dose3.minInterval = 8W
         - Notate in messages: no further doses after dose3 needed.
         - set flags as neccesary
         - notate in dose notes
-    - If (Age >= 12M && Age <= 59M && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M && Dose3.ageReceived < 12M):
+    - If (Age >= 12M && Age < 60M && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M && Dose3.ageReceived < 12M):
         - Set Dose4.minInterval = 8W
-    - If (Age > 60M && !Dose1.received):
+    - If (Age >= 60M && !Dose1.received):
         - Notate in messages: Too late for series. No further vaccination required.
         - set flags as needed on all further vaccinations
     - If More than 4 doses received:
@@ -175,7 +178,7 @@ Each one will
     - Set Dose2.minInterval = 3M
     - If (Dose2.interval < 4W):
         - raise early flag
-    - Else If (Dose2.interval >= 4 && Dose2.interval < 3M):
+    - Else If (Dose2.interval >= 4W && Dose2.interval < 3M):
         - raise early flag
         - notate in messages: dose2 may be counted even if early.
     - If more than 2 doses received:
@@ -195,12 +198,12 @@ Each one will
         - Notate in messages: no further dose neccesary after dose 2
     - If (Age < 12M && Dose2.ageReceived < 7M):
         - Set Dose3.minInterval = 4W
-    - Else If (Dose2.ageReceived >= 7M && Dose2.ageReceived < 11M):
+    - Else If (Dose2.ageReceived >= 7M && Dose2.ageReceived < 12M):
         - Set Dose3.minInterval = 12M - Age <= 8W ? 8W : 12M - Age
-    - If (Age > 12M && [Any Dose Given].ageReceived < 12M):
+    - If (Age >= 12M && [Any Dose Given].ageReceived < 12M):
         - Reset Dose2.minInterval = 8W
         - Reset Dose3.minInterval = 8W
-    - If (Age >= 12M && Age < 59M && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M && Dose3.ageReceived < 12M):
+    - If (Age >= 12M && Age < 60M && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M && Dose3.ageReceived < 12M):
         - Set Dose4.minInterval = 8W  
     - If (Age >= 60M):
         - Notate in messages: No Further Doses needed unless high risk.
