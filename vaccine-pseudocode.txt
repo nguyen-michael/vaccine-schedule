@@ -1,7 +1,7 @@
 Each vaccine is it's own "definition". This allows it to be modified if CDC regulations change.
-Currently concerned with only the 
 ---
-Input and Return
+Input and Return PER VACCINE
+We can do independently
 ___
 
 Takes in Obj:
@@ -14,6 +14,11 @@ Takes in Obj:
 birthdate: A Date. The date of birth of the patient.
 vaccinationDates: Array of dates of vaccination. Can be empty in case of no vaccination.
 options: pass in type of vaccine for the ones that have multiple paths. This can be optional.
+    {
+        vaccine: String (Name of vaccine, needed?),
+        hibFlag: String ("prp-omp" || "prp-t" || "unknown"), optional (used for hib)
+        rotavirusFlag: String ("rotarix" || "rotateq" || "unknown"), optional (used for Rotavirus)
+    }
 
 Returns object:
 {
@@ -24,7 +29,7 @@ Returns object:
 vaccinationSchedule: An array of objects of the form
     {
         dose: Int, (order of dose),
-        date: Date, (date of dose, or proposed date of dose),
+        date: Date, (date of dose),
         reccommendedDate: Date, (dictated by vaccine settings),
         received: Boolean, (Did patient receive this dose already?),
         ageReceived: Date, (If received, Calculate ageReceived, null if not received),
@@ -37,54 +42,90 @@ vaccinationSchedule: An array of objects of the form
     },
 messages: any error flags, notices for entire vaccine. Notes may go here.
 
-It can return a complete array of all doses, to display future/needed doses.
-
-?Return class object via constructor.?
-    - Might not be neccesary, we can figure out later
+It can return a complete array of all doses, to display future/needed doses, and current/late doses
 
 ---
 General Flow
 ___
+1. Get data from front end: 
+    - Which vaccine?
+    - Array of dates given, if any.
+    - Birth Date
+    - Flags if needed.
 
-Preprocessing (can be done inside specific function to receive info such as rec dates):
-- Take in the obj, Preprocessing can expand the object to pass into the specific functions
-- Set Age = (Now - birthdate)
-- Set Doses received = Length of date array
-- Makes sure the dates in the vaccinationDates array are sorted
-- Makes sure the birthdate and dose dates make sense (return an error of it doesn't)
-    - i.e. DOB after a date of vaccination.
-    - this can be guarded against during the data input from the front end.
-- Parse date array (if any, case of no vaccination, e.g.) into vaccinationSchedule object.
-    - Map array to array of objects
-    - Set Received flag for given doses
-    - Calculate based on current, birth and declared dates
-    - Calculate intervals for received doses
-    - Declare messages or notes for all doses
-- Parse vaccinationSchedule array in specific function per vaccine (see below)
-- Pack any messages and objects and returns.
+2. Feed into main code, which will generally preprocess:
+    - Check that none of the vaccination Dates are before birthday (vaccinationDate - birthday < 0)
+        - Can throw error or return error message if so.
+        - We should guard against this in front end
+    - Set Age = (now - birthdate)
+    - Set Doses received = vaccinationDates.length
+    - Sort vaccinationDates, if not already
+        - We can sort in frontend.
+    - Create vaccinationSchedule array from vaccinationDates array
+        - If no vaccination dates, create empty array to be filled with recommended dates in specific function
+        - Populate with objects from given dates in array:
+            {
+                dose: current index + 1 (as counting number)
+                date: date of current index,
+                received: true,
+                ageReceived: (date - birthdate),
+                interval: dose === 1 ? ageReceived : date - previous.date
+                required: true,
+                notes: "", (initialize for later use)
+            }
+    - Create Object to pass into sorter (which picks which vaccine specific function to run)
+        {
+            vaccinationSchedule: [{}, ...],
+            dosesReceived: int,
+            age: age,
+            options: 
+                {
+                    vaccine: String,
+                    hibFlag: string,
+                    rotavirusFlag: string
+                },
+            messages: "" (initialize for later use)
+        }
 
--- specific functions for each vaccine 
--- each vaccine can have it's own settings, like time series for CDC rec doses
+3. Sort (switch case) into correct vaccine specific function
+    - Switch: object.options.vaccine
 
-Each one will
-- If next dose is overdue and min interval passes
-    - set date as current date
-        - Successive doses can be based off that date
-    - notate in messages
-    - raise late flag
-- Declare dates for unreceived doses, based on their respective dose series
-- (Run specific functions)
-- After running specific functions:
+(Now inside of vaccine specific function)
+
+4. Preprocess vaccine dates (process dates specific to each vaccine definition):
+    - Generate recommendedDates array (scoped to function) based on CDC recommendations
+        - Use latest date if given ranges
+        - Add each recommended interval to Birthdate and append to array 
+    - Populate the rest of the vaccinationSchedule with list of recommendedDates 
+        - Generate new schedule objects if they dont already exist:
+            {
+                dose: next value,
+                date: current date if received or null if not.
+                reccommendedDate: Date, date as created by the recommendedDates array
+                received: current value, false, if no date
+                ageReceived: Date, (If received, Calculate ageReceived, null if not received),
+                interval: Date, (Time delta since previous dose, if any. If no previous dose and is dose1, default to time delta since birthdate. Null if not given.),
+                minInterval: Date, (Time delta, min accepted value for interval, declared by specific functions, min age for dose1 is it's minInterval,flag will be set by function)
+                late: Boolean, (set true if date given is behind last recommended date),
+                early: Boolean, (If it's too early,flag will be set by function),
+                required: Boolean, (Default true, If not required, set to false, per CDC guideline)
+                notes: String, (Any notes, messages regarding this particular dose)
+            }
+
+5. Pass this modified object into specific functions (below)
+    - Get same object back out at the end.
+
+6. Postprocessing: after specific functions:
     - Compare intervals and minIntervals and raise early flags if needed
+    - If vaccines need to be given today, calculate new recommendedDate based on minInterval.
     - Finalize everything before returning
 
--? we can check if any is given at all, if none, we can return the recommended schedule based on vaccine settings
-    -? This can include a fallback schedule, start today etc.
-    - Sounds good.
+Example, if empty: Return the recommended schedule based on vaccine settings
+    - This can include a fallback schedule, start today and follows reccommendations or minInterval which ever exists
 
-
--? Check for holes in some of the larger conditions like HiB 59.5M, 11.5M etc
-
+__________
+-- specific functions for each vaccine --
+-- each vaccine can have it's own settings, like time series for CDC rec doses
 
 - Hepatitis A
 - Recommended: 12M, 18M
@@ -228,3 +269,5 @@ Each one will
         - notate in messages
     - If more than 2 doses received && (Rotarix):
         - notate in messages
+
+_______
