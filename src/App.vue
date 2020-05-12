@@ -1,6 +1,6 @@
 <template>
-  <div id="app">
-    <p>my app</p>
+  <div id="app" class="container">
+    <h2>Vax Check</h2>
     <data-entry />
   </div>
 </template>
