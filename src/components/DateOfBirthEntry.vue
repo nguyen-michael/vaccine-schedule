@@ -3,9 +3,9 @@
     <form>
       <fieldset>
         <label for="date-of-birth">Date of Birth</label>
-        <div class="flex-row">
-          <input type="date" name="date-of-birth" id="dob" class="flex-small three-fourths" />
-          <input type="submit" value="Confirm" class="flex-small one-fourth" />
+        <div>
+          <input type="date" name="date-of-birth" id="dob" />
+          <input type="submit" value="Confirm" />
         </div>
       </fieldset>
     </form>

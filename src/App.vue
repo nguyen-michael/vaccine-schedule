@@ -1,16 +1,16 @@
 <template>
-  <div id="app" class="small-container">
-    <h1 class="vertical-center">Vax Check</h1>
-    <div id="information-entry" class="panel">
-      <h2 class="vertical-center">Info entry</h2>
+  <div id="app">
+    <h1>Vax Check</h1>
+    <div id="information-entry">
+      <h2>Info entry</h2>
       <date-of-birth-entry />
       <vaccine-entry />
       <vaccine-entry />
       <vaccine-entry />
       <vaccine-entry />
     </div>
-    <div id="schedule-display" class="panel">
-      <h2 class="vertical-center">Schedule display</h2>
+    <div id="schedule-display">
+      <h2>Schedule display</h2>
       <vaccine-panel />
       <vaccine-panel />
     </div>

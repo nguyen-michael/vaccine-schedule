@@ -1,5 +1,5 @@
 <template>
-  <div class="panel">
+  <div>
     <h3>HiB Schedule</h3>
     <p>
       <em>late dose!</em>

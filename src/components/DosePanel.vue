@@ -1,5 +1,5 @@
 <template>
-  <div class="panel">
+  <div>
     <h4>Dose Panel</h4>
     <p>Rec Date: 230 033</p>
   </div>
