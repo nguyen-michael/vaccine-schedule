@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <p class="display-1 text-center">Vax Check!</p>
-    <v-expansion-panels multiple>
+    <v-expansion-panels>
       <the-date-of-birth-entry 
         :date-of-birth="dateOfBirth" 
         @change:date="updateDOB" 
@@ -22,7 +22,18 @@
         @update:variant="updateVariant"
         @update:date-received="updateDatesReceived"
       />
-      <vaccine-panel />
+    </v-expansion-panels>
+    <v-card>
+      <v-card-title class="my-2" >
+        Vaccine Schedule:
+      </v-card-title>
+    </v-card>
+    <v-expansion-panels>
+      <vaccine-panel 
+        v-for="vaccine in this.vaccines"
+        :key="vaccine.name"
+        :vaccine="vaccine"
+      />
     </v-expansion-panels>
   </v-app>
 </template>
@@ -52,55 +63,73 @@ export default {
           "Both/Unknown"
         ],
         variant: null,
-        datesReceived: []
+        datesReceived: [],
+        schedule: [],
+        notes: "notes specific to entire vaccine."
       },
       {
         name: "HepA",
         variants: null,
         variant: null,
-        datesReceived: []
+        datesReceived: [],
+        schedule: [],
+        notes: "notes specific to entire vaccine."
       },
       {
         name: "HepB",
         variants: null,
         variant: null,
-        datesReceived: []
+        datesReceived: [],
+        schedule: [],
+        notes: "notes specific to entire vaccine."
       },
       {
         name: "IPV",
         variants: null,
         variant: null,
-        datesReceived: []
+        datesReceived: [],
+        schedule: [],
+        notes: "notes specific to entire vaccine."
       },
       {
         name: "Rotavirus",
         variants: ["Rotateq", "Rotarix", "Both/Unknown"],
         variant: null,
-        datesReceived: []
+        datesReceived: [],
+        schedule: [],
+        notes: "notes specific to entire vaccine."
       },
       {
         name: "DTAP",
         variants: null,
         variant: null,
-        datesReceived: []
+        datesReceived: [],
+        schedule: [],
+        notes: "notes specific to entire vaccine."
       },
       {
         name: "Varicella",
         variants: null,
         variant: null,
-        datesReceived: []
+        datesReceived: [],
+        schedule: [],
+        notes: "notes specific to entire vaccine."
       },
       {
         name: "MMR",
         variants: null,
         variant: null,
-        datesReceived: []
+        datesReceived: [],
+        schedule: [],
+        notes: "notes specific to entire vaccine."
       },
       {
         name: "PCV13",
         variants: null,
         variant: null,
-        datesReceived: []
+        datesReceived: [],
+        schedule: [],
+        notes: "notes specific to entire vaccine."
       }
     ]
   }),
@@ -116,6 +145,20 @@ export default {
 
     updateDatesReceived(dateList, index) {
       this.vaccines[index].datesReceived = dateList;
+      this.vaccines[index].schedule = dateList.map((date) => {
+        return {
+            date: date,
+            latestRecommendedDate: null,
+            received: true,
+            ageReceived: null, // in months?
+            intervalSinceLastDose: null,
+            minInterval: null,
+            late: false,
+            early: false,
+            required: true,
+            notes: "notes specific to this dose."
+          };
+      });
     }
   }
 };

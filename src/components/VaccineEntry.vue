@@ -1,6 +1,8 @@
 <template>
   <v-expansion-panel>
-    <v-expansion-panel-header>{{ vaccine.name }}</v-expansion-panel-header>
+    <v-expansion-panel-header>
+      {{ vaccine.name }} <span v-if="this.dateList.length > 0">{{ this.dateList.length }} dates entered</span>
+    </v-expansion-panel-header>
     <v-expansion-panel-content>
       <v-select
         v-if="vaccine.variants"
@@ -17,6 +19,9 @@
       >
         <v-btn text color="primary" @click="handleAddDate()">Add Vaccination Date</v-btn>
       </v-date-picker>
+      <v-alert type="warning" dismissible v-model="alert">
+        {{ message }}
+      </v-alert>
       <v-list dense>
         <v-subheader>Selected Dates</v-subheader>
         <v-list-item 
@@ -45,27 +50,33 @@ export default {
   data: () => ({
     date: new Date().toLocaleString('sv').substr(0, 10),
     dateList: [],
-    variant: null
+    variant: null,
+    alert: false,
+    message: "warning"
   }),
 
   methods: {
     handleAddDate() {
       // Date validations
       if (this.date < this.dateOfBirth) {
-        console.log("Can't get a shot before you're born.");
+        this.message = "Cannot receive vaccine before birth.";
+        this.alert = true;
         return;
       }
 
       if (this.dateList.includes(this.date)) {
-        alert("You've already given a shot on this date.");
+        this.message = "Vaccine aleready given on this date";
+        this.alert = true;
         return;
       }
 
       if (this.dateList.length > 5) {
-        alert("That's probably too many shots.");
+        this.message = "That's probably too many vaccinations.";
+        this.alert = true;
         return;
       }
       
+      this.alert = false;
       this.dateList = [...this.dateList, this.date].sort();
       this.$emit("update:date-received", this.dateList, this.index);
     },
