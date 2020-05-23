@@ -1,45 +1,94 @@
 <template>
-  <form>
-    <fieldset>
-      <label for="hepatitis-a">HepA</label>
-      <div class="flex-row">
-        <input type="date" name="hepatitis-a" id="hepA" class="flex-small three-fourths" />
-        <input type="submit" value="Add Date" class="flex-small one-fourth" />
-      </div>
-      <div class="contain-table">
-        <table>
-          <thead>
-            <th>Dose Number</th>
-            <th>Dose Date</th>
-            <th>Delete</th>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td>2020-02-12</td>
-              <td>
-                <button class="muted-button">Delete</button>
-              </td>
-            </tr>
-            <tr>
-              <td>2</td>
-              <td>2020-05-11</td>
-              <td>
-                <button class="muted-button">Delete</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </fieldset>
-  </form>
+  <v-expansion-panel>
+    <v-expansion-panel-header>
+      {{ vaccine.name }} <span v-if="this.dateList.length > 0">{{ this.dateList.length }} dates entered</span>
+    </v-expansion-panel-header>
+    <v-expansion-panel-content>
+      <v-select
+        v-if="vaccine.variants"
+        :items="vaccine.variants"
+        v-model="variant"
+        label="Choose variant received"
+        @change="handleAddVariant"
+      ></v-select>
+      <v-date-picker
+        v-model="date"
+        :reactive="true"
+        :min="dateOfBirth"
+        :max="new Date().toLocaleString('sv').substr(0, 10)"
+      >
+        <v-btn text color="primary" @click="handleAddDate()">Add Vaccination Date</v-btn>
+      </v-date-picker>
+      <v-alert type="warning" dismissible v-model="alert">
+        {{ message }}
+      </v-alert>
+      <v-list dense>
+        <v-subheader>Selected Dates</v-subheader>
+        <v-list-item 
+          v-for="(date, i) in dateList" 
+          :key="i"
+        >
+          <v-list-item-content>
+            <span>{{ date }}<v-btn outlined small :value="i" @click="handleDeleteDate">Delete</v-btn></span>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-expansion-panel-content>
+  </v-expansion-panel>
 </template>
 
 <script>
 export default {
-  name: "VaccineEntry"
+  name: "VaccineEntry",
+
+  props: {
+    vaccine: Object,
+    dateOfBirth: String,
+    index: Number
+  },
+
+  data: () => ({
+    date: new Date().toLocaleString('sv').substr(0, 10),
+    dateList: [],
+    variant: null,
+    alert: false,
+    message: "warning"
+  }),
+
+  methods: {
+    handleAddDate() {
+      // Date validations
+      if (this.date < this.dateOfBirth) {
+        this.message = "Cannot receive vaccine before birth.";
+        this.alert = true;
+        return;
+      }
+
+      if (this.dateList.includes(this.date)) {
+        this.message = "Vaccine aleready given on this date";
+        this.alert = true;
+        return;
+      }
+
+      if (this.dateList.length > 5) {
+        this.message = "That's probably too many vaccinations.";
+        this.alert = true;
+        return;
+      }
+      
+      this.alert = false;
+      this.dateList = [...this.dateList, this.date].sort();
+      this.$emit("update:date-received", this.dateList, this.index);
+    },
+
+    handleAddVariant() {
+      this.$emit("update:variant", this.variant, this.index);
+    },
+
+    handleDeleteDate(dateIndex) {
+      this.dateList.splice(dateIndex, 1);
+      this.$emit("update:date-received", this.dateList, this.index);
+    }
+  }
 };
 </script>
-
-<style scoped>
-</style>

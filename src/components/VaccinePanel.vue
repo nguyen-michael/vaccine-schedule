@@ -1,20 +1,26 @@
 <template>
-  <div class="panel">
-    <h3>HiB Schedule</h3>
-    <p>
-      <em>late dose!</em>
-    </p>
-    <dose-panel />
-    <dose-panel />
-  </div>
+  <v-expansion-panel>
+    <v-expansion-panel-header>{{ vaccine.name }}</v-expansion-panel-header>
+    <v-expansion-panel-content>
+      <v-panel>Notes: {{ vaccine.notes }}</v-panel>
+      <v-expansion-panels multiple>
+        <dose-panel v-for="(dose, i) in vaccine.schedule" :key="i" :dose="dose" :index="i" />
+      </v-expansion-panels>
+    </v-expansion-panel-content>
+  </v-expansion-panel>
 </template>
 
 <script>
 import DosePanel from "./DosePanel.vue";
 export default {
   name: "VaccinePanel",
+
   components: {
     DosePanel
+  },
+
+  props: {
+    vaccine: Object
   }
 };
 </script>
