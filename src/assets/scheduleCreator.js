@@ -153,7 +153,6 @@ function parseSchedule(vaccine, dateOfBirthISOString) {
     return vaccine;
 }
 
-
 /* Vaccine Specific Schedulers */
 /* These return the entire updated vaccine object */
 function hibScheduler(vaccine, age, dateOfBirth) {
@@ -207,10 +206,15 @@ function hepAScheduler(vaccine, age, dateOfBirth) {
     // If first dose, min interval
     // If subsequent dose AND prev received, date of prev plus min interval
     // If subsequent dose AND prev NOT received, date of prev latestrec plus min interval
-    vaccine.schedule[0].earliestPossibleDate = dateOfBirth.plus(vaccine.schedule[0].minInterval);
-    vaccine.schedule[1].earliestPossibleDate = vaccine.schedule[0].received
-        ? dt.fromISO(vaccine.schedule[0].date).plus(vaccine.schedule[1].minInterval)
-        : vaccine.schedule[0].latestRecommendedDate.plus(vaccine.schedule[1].minInterval);
+    vaccine.schedule.forEach((dose, index) => {
+        if (index === 0) {
+            dose.earliestPossibleDate = dateOfBirth.plus(dose.minInterval)
+        } else {
+            dose.earliestPossibleDate = vaccine.schedule[index - 1].received
+                ? dt.fromISO(vaccine.schedule[index - 1].date).plus(dose.minInterval)
+                : vaccine.schedule[index - 1].latestRecommendedDate.plus(dose.minInterval);
+        }
+    });
 
     return vaccine;
 }
@@ -260,17 +264,18 @@ function hepBScheduler(vaccine, age, dateOfBirth) {
     });
 
     // Set earliest possible dates
-    // (This can be abstracted out, as can many of the inteval setters. We'll do it to clean up code later.)
     // If first dose, min interval
     // If subsequent dose AND prev received, date of prev plus min interval
     // If subsequent dose AND prev NOT received, date of prev latestrec plus min interval
-    vaccine.schedule[0].earliestPossibleDate = dateOfBirth.plus(vaccine.schedule[0].minInterval);
-    vaccine.schedule[1].earliestPossibleDate = vaccine.schedule[0].received
-        ? dt.fromISO(vaccine.schedule[0].date).plus(vaccine.schedule[1].minInterval)
-        : vaccine.schedule[0].latestRecommendedDate.plus(vaccine.schedule[1].minInterval);
-    vaccine.schedule[2].earliestPossibleDate = vaccine.schedule[1].received
-        ? dt.fromISO(vaccine.schedule[1].date).plus(vaccine.schedule[2].minInterval)
-        : vaccine.schedule[1].latestRecommendedDate.plus(vaccine.schedule[2].minInterval);
+    vaccine.schedule.forEach((dose, index) => {
+        if (index === 0) {
+            dose.earliestPossibleDate = dateOfBirth.plus(dose.minInterval)
+        } else {
+            dose.earliestPossibleDate = vaccine.schedule[index - 1].received
+                ? dt.fromISO(vaccine.schedule[index - 1].date).plus(dose.minInterval)
+                : vaccine.schedule[index - 1].latestRecommendedDate.plus(dose.minInterval);
+        }
+    });
 
 
     // Hepatitis B Specific Checks
@@ -294,20 +299,269 @@ function hepBScheduler(vaccine, age, dateOfBirth) {
 }
 
 function ipvScheduler(vaccine, age, dateOfBirth) {
-    console.log(JSON.stringify(vaccine, null, 4));
+    // CDC recommended age intervals for each dose (latest date)
+    const cdcRecommendedAgeIntervals = [
+        dateOfBirth.plus({ months: 2 }),
+        dateOfBirth.plus({ months: 4 }),
+        dateOfBirth.plus({ months: 18 }),
+        dateOfBirth.plus({ months: 72 })
+    ];
+
+    // Fill in gaps with empty doses
+    while (vaccine.schedule.length < 4) {
+        const dose = {
+            date: null,
+            latestRecommendedDate: null,
+            earliestPossibleDate: null,
+            received: false,
+            ageReceived: null,
+            intervalSinceLastDose: null,
+            minInterval: null,
+            late: false,
+            early: false,
+            required: true,
+            notes: ""
+        };
+
+        vaccine.schedule = [...vaccine.schedule, dose];
+    }
+
+    // Check for excess doses
+    if (vaccine.schedule.length > 4) {
+        vaccine.notes = "Too many doses (4 dose series for IPV)";
+        vaccine.schedule.forEach((dose, index) => {
+            if (index > 1) {
+                dose.notes = "This is an extra dose! It is not required.";
+                dose.required = false;
+            }
+        });
+    }
+
+    // Set minIntervals
+    vaccine.schedule[0].minInterval = dur.fromObject({ months: 1, weeks: 2 });
+    vaccine.schedule[1].minInterval = dur.fromObject({ months: 1 });
+    vaccine.schedule[2].minInterval = (age.valueOf() < dur.fromObject({ years: 4 }))
+        ? dur.fromObject({ months: 1 })
+        : dur.fromObject({ months: 6 });
+    vaccine.schedule[3].minInterval = dur.fromObject({ months: 6 });
+
+
+    // Set recommended dates
+    cdcRecommendedAgeIntervals.forEach((doseDate, index) => {
+        vaccine.schedule[index].latestRecommendedDate = doseDate;
+    });
+
+    // Set earliest possible dates
+    // If first dose, min interval
+    // If subsequent dose AND prev received, date of prev plus min interval
+    // If subsequent dose AND prev NOT received, date of prev latestrec plus min interval
+    vaccine.schedule.forEach((dose, index) => {
+        if (index === 0) {
+            dose.earliestPossibleDate = dateOfBirth.plus(dose.minInterval)
+        } else {
+            dose.earliestPossibleDate = vaccine.schedule[index - 1].received
+                ? dt.fromISO(vaccine.schedule[index - 1].date).plus(dose.minInterval)
+                : vaccine.schedule[index - 1].latestRecommendedDate.plus(dose.minInterval);
+        }
+    });
+
+
+    // IPV Specific Checks
+    if (
+        vaccine.schedule[3].received
+        && vaccine.schedule[3].ageReceived.valueOf() < dur.fromObject({ years: 4 })
+    ) {
+        vaccine.schedule[3].early = true;
+        vaccine.schedule[3].notes = "Dose 4 too early, should not be administered before 4 years of age.";
+    }
+
+    if (
+        age.valueOf() >= dur.fromObject({ years: 4 })
+        && !vaccine.schedule[2].received
+    ) {
+        vaccine.schedule[2].notes = "Dose 3 will be the final dose needed, since patient is over 4 years of age.";
+        vaccine.schedule[3].required = false;
+        vaccine.schedule[3].notes = "Dose 4 is not required since patient will receive dose 3 after 4 years of age.";
+    }
+
+    return vaccine;
 }
 
 function rotavirusScheduler(vaccine, age, dateOfBirth) {
-    console.log(JSON.stringify(vaccine, null, 4));
+    // Get rotarix or rotateq (both/unknown will lump with rotateq)
+    const isRotarix = vaccine.variant === "Rotarix" ? true : false;
+
+
+    // CDC recommended age intervals for each dose (latest date)
+    const cdcRecommendedAgeIntervals = isRotarix
+        ? [dateOfBirth.plus({ months: 2 }), dateOfBirth.plus({ months: 4 })]
+        : [dateOfBirth.plus({ months: 2 }), dateOfBirth.plus({ months: 4 }), dateOfBirth.plus({ months: 6 })];
+
+    // Fill in gaps with empty doses
+    while ((vaccine.schedule.length < 2 && isRotarix) || (vaccine.schedule.length < 3 && !isRotarix)) {
+        const dose = {
+            date: null,
+            latestRecommendedDate: null,
+            earliestPossibleDate: null,
+            received: false,
+            ageReceived: null,
+            intervalSinceLastDose: null,
+            minInterval: null,
+            late: false,
+            early: false,
+            required: true,
+            notes: ""
+        };
+
+        vaccine.schedule = [...vaccine.schedule, dose];
+    }
+
+    // Check for excess doses
+    if (vaccine.schedule.length > 2 && isRotarix) {
+        vaccine.notes = "Too many doses (2 dose series for Rotavirus with Rotarix).";
+        vaccine.schedule.forEach((dose, index) => {
+            if (index > 1) {
+                dose.notes = "This is an extra dose! It is not required.";
+                dose.required = false;
+            }
+        });
+    } else if (vaccine.schedule.length > 3 && !isRotarix) {
+        vaccine.notes = "Too many doses (3 dose series for Rotavirus with Rotateq or Unknown/Mixed).";
+        vaccine.schedule.forEach((dose, index) => {
+            if (index > 1) {
+                dose.notes = "This is an extra dose! It is not required.";
+                dose.required = false;
+            }
+        });
+    }
+
+    // Set minIntervals
+    vaccine.schedule[0].minInterval = dur.fromObject({ months: 1, weeks: 2 });
+    vaccine.schedule[1].minInterval = dur.fromObject({ months: 1 });
+    if (!isRotarix) {
+        vaccine.schedule[2].minInterval = dur.fromObject({ months: 1});
+    }
+
+
+    // Set recommended dates
+    cdcRecommendedAgeIntervals.forEach((doseDate, index) => {
+        vaccine.schedule[index].latestRecommendedDate = doseDate;
+    });
+
+    // Set earliest possible dates
+    // If first dose, min interval
+    // If subsequent dose AND prev received, date of prev plus min interval
+    // If subsequent dose AND prev NOT received, date of prev latestrec plus min interval
+    vaccine.schedule.forEach((dose, index) => {
+        if (index === 0) {
+            dose.earliestPossibleDate = dateOfBirth.plus(dose.minInterval)
+        } else {
+            dose.earliestPossibleDate = vaccine.schedule[index - 1].received
+                ? dt.fromISO(vaccine.schedule[index - 1].date).plus(dose.minInterval)
+                : vaccine.schedule[index - 1].latestRecommendedDate.plus(dose.minInterval);
+        }
+    });
+
+
+    // Rotavirus Specific Checks
+    if (age.valueOf() > dur.fromObject({ months: 8 })) {
+        vaccine.schedule.forEach(dose => {
+            dose.notes = "No further vaccination is needed.";
+            dose.required = false;
+        });
+
+        vaccine.notes = "Patient is older than 8 months, no further rotavirus vaccines required.";
+    }
+
+    return vaccine;
 }
 
 function dtapScheduler(vaccine, age, dateOfBirth) {
-    console.log(JSON.stringify(vaccine, null, 4));
+    // CDC recommended age intervals for each dose (latest date)
+    const cdcRecommendedAgeIntervals = [
+        dateOfBirth.plus({ months: 2 }),
+        dateOfBirth.plus({ months: 4 }),
+        dateOfBirth.plus({ months: 6 }),
+        dateOfBirth.plus({ months: 18 }),
+        dateOfBirth.plus({ months: 72 })
+    ];
+
+    // Fill in gaps with empty doses
+    while (vaccine.schedule.length < 5) {
+        const dose = {
+            date: null,
+            latestRecommendedDate: null,
+            earliestPossibleDate: null,
+            received: false,
+            ageReceived: null,
+            intervalSinceLastDose: null,
+            minInterval: null,
+            late: false,
+            early: false,
+            required: true,
+            notes: ""
+        };
+
+        vaccine.schedule = [...vaccine.schedule, dose];
+    }
+
+    // Check for excess doses
+    if (vaccine.schedule.length > 5) {
+        vaccine.notes = "Too many doses (5 dose series for DTAP)";
+        vaccine.schedule.forEach((dose, index) => {
+            if (index > 1) {
+                dose.notes = "This is an extra dose! It is not required.";
+                dose.required = false;
+            }
+        });
+    }
+
+    // Set minIntervals
+    vaccine.schedule[0].minInterval = dur.fromObject({ months: 1, weeks: 2 });
+    vaccine.schedule[1].minInterval = dur.fromObject({ months: 1 });
+    vaccine.schedule[2].minInterval = dur.fromObject({ months: 1 });
+    vaccine.schedule[3].minInterval = dur.fromObject({ months: 6 });
+    vaccine.schedule[4].minInterval = dur.fromObject({ months: 6 });
+
+
+    // Set recommended dates
+    cdcRecommendedAgeIntervals.forEach((doseDate, index) => {
+        vaccine.schedule[index].latestRecommendedDate = doseDate;
+    });
+
+    // Set earliest possible dates
+    // If first dose, min interval
+    // If subsequent dose AND prev received, date of prev plus min interval
+    // If subsequent dose AND prev NOT received, date of prev latestrec plus min interval
+    vaccine.schedule.forEach((dose, index) => {
+        if (index === 0) {
+            dose.earliestPossibleDate = dateOfBirth.plus(dose.minInterval)
+        } else {
+            dose.earliestPossibleDate = vaccine.schedule[index - 1].received
+                ? dt.fromISO(vaccine.schedule[index - 1].date).plus(dose.minInterval)
+                : vaccine.schedule[index - 1].latestRecommendedDate.plus(dose.minInterval);
+        }
+    });
+
+
+    // DTAP Specific Checks
+    if (
+        vaccine.schedule[3].received
+        && vaccine.schedule[3].intervalSinceLastDose.valueOf() >= dur.fromObject({ months: 6 }).valueOf()
+        && vaccine.schedule[3].ageReceived.valueOf() >= dur.fromObject({ years: 4 }).valueOf()
+    ) {
+        vaccine.schedule[3].notes = "Dose 4 received later than 4 years of age and longer than 6 months since Dose 3: dose 5 not needed.";
+        vaccine.schedule[4].required = false;
+        vaccine.schedule[4].notes = "Dose 5 no longer required since dose 4 was received later than 4 years of age.";
+        vaccine.notes = "Dose 5 not required.";
+    }
+
+    return vaccine;
 }
 
 function varicellaScheduler(vaccine, age, dateOfBirth) {
     // CDC recommended age intervals for each dose (latest date)
-    const cdcRecommendedAgeIntervals = [dateOfBirth.plus({ months: 15 }), dateOfBirth.plus({ months: 60 })];
+    const cdcRecommendedAgeIntervals = [dateOfBirth.plus({ months: 15 }), dateOfBirth.plus({ months: 72 })];
 
     // Fill in gaps with empty doses
     while (vaccine.schedule.length < 2) {
@@ -352,10 +606,15 @@ function varicellaScheduler(vaccine, age, dateOfBirth) {
     // If first dose, min interval
     // If subsequent dose AND prev received, date of prev plus min interval
     // If subsequent dose AND prev NOT received, date of prev latestrec plus min interval
-    vaccine.schedule[0].earliestPossibleDate = dateOfBirth.plus(vaccine.schedule[0].minInterval);
-    vaccine.schedule[1].earliestPossibleDate = vaccine.schedule[0].received
-        ? dt.fromISO(vaccine.schedule[0].date).plus(vaccine.schedule[1].minInterval)
-        : vaccine.schedule[0].latestRecommendedDate.plus(vaccine.schedule[1].minInterval);
+    vaccine.schedule.forEach((dose, index) => {
+        if (index === 0) {
+            dose.earliestPossibleDate = dateOfBirth.plus(dose.minInterval)
+        } else {
+            dose.earliestPossibleDate = vaccine.schedule[index - 1].received
+                ? dt.fromISO(vaccine.schedule[index - 1].date).plus(dose.minInterval)
+                : vaccine.schedule[index - 1].latestRecommendedDate.plus(dose.minInterval);
+        }
+    });
 
 
     // Varicella Specific Checks
@@ -377,7 +636,7 @@ function varicellaScheduler(vaccine, age, dateOfBirth) {
 
 function mmrScheduler(vaccine, age, dateOfBirth) {
     // CDC recommended age intervals for each dose (latest date)
-    const cdcRecommendedAgeIntervals = [dateOfBirth.plus({ months: 15 }), dateOfBirth.plus({ months: 60 })];
+    const cdcRecommendedAgeIntervals = [dateOfBirth.plus({ months: 15 }), dateOfBirth.plus({ months: 72 })];
 
     // Fill in gaps with empty doses
     while (vaccine.schedule.length < 2) {
@@ -422,10 +681,15 @@ function mmrScheduler(vaccine, age, dateOfBirth) {
     // If first dose, min interval
     // If subsequent dose AND prev received, date of prev plus min interval
     // If subsequent dose AND prev NOT received, date of prev latestrec plus min interval
-    vaccine.schedule[0].earliestPossibleDate = dateOfBirth.plus(vaccine.schedule[0].minInterval);
-    vaccine.schedule[1].earliestPossibleDate = vaccine.schedule[0].received
-        ? dt.fromISO(vaccine.schedule[0].date).plus(vaccine.schedule[1].minInterval)
-        : vaccine.schedule[0].latestRecommendedDate.plus(vaccine.schedule[1].minInterval);
+    vaccine.schedule.forEach((dose, index) => {
+        if (index === 0) {
+            dose.earliestPossibleDate = dateOfBirth.plus(dose.minInterval)
+        } else {
+            dose.earliestPossibleDate = vaccine.schedule[index - 1].received
+                ? dt.fromISO(vaccine.schedule[index - 1].date).plus(dose.minInterval)
+                : vaccine.schedule[index - 1].latestRecommendedDate.plus(dose.minInterval);
+        }
+    });
 
     return vaccine;
 }
@@ -462,13 +726,67 @@ function pcv13Scheduler(vaccine, age, dateOfBirth) {
 //     notes: ""
 // }, "2020-05-24");
 
+// const testSchedule = parseSchedule({
+//     name: "HepB",
+//     variants: null,
+//     variant: null,
+//     datesReceived: ["2020-05-24", "2020-07-01", "2020-09-02"],
+//     schedule: [],
+//     notes: ""
+// }, "2010-05-24");
+
+// const testSchedule = parseSchedule({
+//     name: "DTAP",
+//     variants: null,
+//     variant: null,
+//     datesReceived: [],
+//     schedule: [],
+//     notes: ""
+// }, "2020-05-24");
+
+// const testSchedule = parseSchedule({
+//     name: "DTAP",
+//     variants: null,
+//     variant: null,
+//     datesReceived: ["2018-07-24", "2018-09-25", "2018-11-26", "2019-04-20"],
+//     schedule: [],
+//     notes: ""
+// }, "2010-05-24");
+
+// const testSchedule = parseSchedule({
+//     name: "DTAP",
+//     variants: null,
+//     variant: null,
+//     datesReceived: ["2018-07-24", "2018-09-25", "2018-11-26", "2020-04-20"],
+//     schedule: [],
+//     notes: ""
+// }, "2010-05-24");
+
+// const testSchedule = parseSchedule({
+//     name: "IPV",
+//     variants: null,
+//     variant: null,
+//     datesReceived: ["2018-07-24", "2018-09-25"],
+//     schedule: [],
+//     notes: ""
+// }, "2010-05-24");
+
+// const testSchedule = parseSchedule({
+//     name: "IPV",
+//     variants: null,
+//     variant: null,
+//     datesReceived: [],
+//     schedule: [],
+//     notes: ""
+// }, "2010-05-24");
+
 const testSchedule = parseSchedule({
-    name: "HepB",
-    variants: null,
-    variant: null,
-    datesReceived: ["2020-05-24", "2020-07-01", "2020-09-02"],
+    name: "Rotavirus",
+    variants: ["Rotateq", "Rotarix", "Both/Unknown"],
+    variant: "Rotateq",
+    datesReceived: ["2020-05-29"],
     schedule: [],
     notes: ""
-}, "2010-05-24");
+}, "2020-03-24");
 
 console.log(testSchedule);

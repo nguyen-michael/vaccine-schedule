@@ -1,4 +1,4 @@
-✓ Each vaccine is it's own "definition". This allows it to be modified if CDC regulations change.
+vac✓ Each vaccine is it's own "definition". This allows it to be modified if CDC regulations change.
 
 ✓ Takes in Obj:
 {
@@ -142,19 +142,19 @@ __________
         ✓ notate in dose notes
         ✓ notate in messages: Dose3 too early and/or too close to Dose1
 
-- DTAP
-- Recommended: 2M, 4M, 6M, 15-18M, 4-6Y
-    - Set Dose1.minInterval = 6W
-    - Set Dose2.minInterval = 4W
-    - Set Dose3.minInterval = 4W
-    - Set Dose4.minInterval = 6M
-    - Set Dose5.minInterval = 6M
-    - If more than 5 doses received:
+✓ DTAP
+✓ Recommended: 2M, 4M, 6M, 15-18M, 4-6Y
+    ✓ Set Dose1.minInterval = 6W
+    ✓ Set Dose2.minInterval = 4W
+    ✓ Set Dose3.minInterval = 4W
+    ✓ Set Dose4.minInterval = 6M
+    ✓ Set Dose5.minInterval = 6M
+    ✓ If more than 5 doses received:
         - notate in messages
-    - If Dose4.interval >= 6M && Dose4.ageReceived >= 4Y:
-        - notate in messages: Dose5 not needed. Done with vaccination series
-        - notate in dose notes
-        - set flags of following doses as needed
+    ✓ If Dose4.interval >= 6M && Dose4.ageReceived >= 4Y:
+        ✓ notate in messages: Dose5 not needed. Done with vaccination series
+        ✓ notate in dose notes
+        ✓ set flags of following doses as needed
 
 - HiB
 - Recommended: 2M, 4M, 6M (HiB-PRP-T), 12-15M
@@ -188,20 +188,21 @@ __________
     - If More than 3 doses received && PRP-OMP:
         - notate in messages
     
-- IPV
-- Recommended: 2M, 4M, 6-18M, 4-6Y
-    - Set Dose1.minInterval = 6W
-    - Set Dose2.minInterval = 4W
-    - If (Age < 48M):
-        - Set Dose3.minInterval = 4W
-    - Else If (Age >= 48M):
-        - Set Dose3.minInterval = 6M
-    - If (Dose4.ageReceived < 48M):
-        - raise early flag
-        - notate in dose notes
-        - notate in messages: Dose4 too early, min age 4 years
-    - If more than 4 doses received:
-        - notate in messages
+✓ IPV
+✓ Recommended: 2M, 4M, 6-18M, 4-6Y
+    ✓ Set Dose1.minInterval = 6W
+    ✓ Set Dose2.minInterval = 4W
+    ✓ If (Age < 48M):
+        ✓ Set Dose3.minInterval = 4W
+    ✓ Else If (Age >= 48M):
+        ✓ Set Dose3.minInterval = 6M
+    ✓ If (Dose4.ageReceived < 48M):
+        ✓ raise early flag
+        ✓ notate in dose notes
+        ✓ notate in messages: Dose4 too early, min age 4 years
+    ✓ If more than 4 doses received:
+        ✓ notate in messages
+    ✓ if (age >= 4Y) 3rd dose is final dose. 4 is okay.
 
 ✓ MMR
 ✓ Recommended: 12-15M, 4-6Y
@@ -250,21 +251,21 @@ __________
     - If more than 4 doses received:
         - notate in messages
 
-- Rotavirus
-- Recommended: 2M, 4M, 6M (RotaTeq)
-    - Set flag: Rotarix or Rotateq or unknown
-        - Default to 3 Series (Rotateq) if unknown.
-    - Set Dose1.minInterval = 6W
-    - Set Dose2.minInterval = 4W
-    - If (Rotateq || Unknown):
-        - Set Dose3.minInterval = 4W
-    - If (Age > 8M):
-        - Notate in messages: No Further Doses needed
-        - Notate in dose notes
-        - Set Flags as needed
-    - If more than 3 doses received && (Rotateq || Unknown):
-        - notate in messages
-    - If more than 2 doses received && (Rotarix):
-        - notate in messages
+✓ Rotavirus
+✓ Recommended: 2M, 4M, 6M (RotaTeq)
+    ✓ Set flag: Rotarix or Rotateq or unknown
+        ✓ Default to 3 Series (Rotateq) if unknown.
+    ✓ Set Dose1.minInterval = 6W
+    ✓ Set Dose2.minInterval = 4W
+    ✓ If (Rotateq || Unknown):
+        ✓ Set Dose3.minInterval = 4W
+    ✓ If (Age > 8M):
+        ✓ Notate in messages: No Further Doses needed
+        ✓ Notate in dose notes
+        ✓ Set Flags as needed
+    ✓ If more than 3 doses received && (Rotateq || Unknown):
+        ✓ notate in messages
+    ✓ If more than 2 doses received && (Rotarix):
+        ✓ notate in messages
 
 _______
