@@ -1,32 +1,29 @@
-Each vaccine is it's own "definition". This allows it to be modified if CDC regulations change.
----
-Input and Return PER VACCINE
-We can do independently
-___
+✓ Each vaccine is it's own "definition". This allows it to be modified if CDC regulations change.
 
-Takes in Obj:
+✓ Takes in Obj:
 {
     birthdate: Date,
     vaccinationDates: [Date, ...],
     options: Object
 }
 
-birthdate: A Date. The date of birth of the patient.
-vaccinationDates: Array of dates of vaccination. Can be empty in case of no vaccination.
-options: pass in type of vaccine for the ones that have multiple paths. This can be optional.
+✓ birthdate: A Date. The date of birth of the patient.
+✓ vaccinationDates: Array of dates of vaccination. Can be empty in case of no vaccination.
+*options: pass in type of vaccine for the ones that have multiple paths. This can be optional.
     {
         vaccine: String (Name of vaccine, needed?),
         hibFlag: String ("prp-omp" || "prp-t" || "unknown"), optional (used for hib)
         rotavirusFlag: String ("rotarix" || "rotateq" || "unknown"), optional (used for Rotavirus)
     }
+* - modified version now.
 
-Returns object:
+*Returns object:
 {
     vaccinationSchedule: [{Dose Information}, ...],
     messages: {Strings, ...}
-}
+}* - will return same vaccine object to be reassigned
 
-vaccinationSchedule: An array of objects of the form
+✓ (these are our dose objects) vaccinationSchedule: An array of objects of the form
     {
         dose: Int, (order of dose),
         date: Date, (date of dose),
@@ -42,12 +39,12 @@ vaccinationSchedule: An array of objects of the form
     },
 messages: any error flags, notices for entire vaccine. Notes may go here.
 
-It can return a complete array of all doses, to display future/needed doses, and current/late doses
+✓ It can return a complete array of all doses, to display future/needed doses, and current/late doses
 
 ---
 General Flow
 ___
-1. Get data from front end: 
+✓ 1. Get data from front end: 
     - Which vaccine?
     - Array of dates given, if any.
     - Birth Date
@@ -57,13 +54,13 @@ ___
     - Check that none of the vaccination Dates are before birthday (vaccinationDate - birthday < 0)
         - Can throw error or return error message if so.
         - We should guard against this in front end
-    - Set Age = (now - birthdate)
-    - Set Doses received = vaccinationDates.length
-    - Sort vaccinationDates, if not already
-        - We can sort in frontend.
-    - Create vaccinationSchedule array from vaccinationDates array
-        - If no vaccination dates, create empty array to be filled with recommended dates in specific function
-        - Populate with objects from given dates in array:
+    ✓ Set Age = (now - birthdate)
+    ✓ (not needed, just take length) Set Doses received = vaccinationDates.length
+    ✓ Sort vaccinationDates, if not already
+        ✓ We can sort in frontend.
+    ✓ Create vaccinationSchedule array from vaccinationDates array
+        - (Do this step in the switch sorter) If no vaccination dates, create empty array to be filled with recommended dates in specific function
+        ✓ Populate with objects from given dates in array:
             {
                 dose: current index + 1 (as counting number)
                 date: date of current index,
@@ -73,7 +70,7 @@ ___
                 required: true,
                 notes: "", (initialize for later use)
             }
-    - Create Object to pass into sorter (which picks which vaccine specific function to run)
+    ✓ (Seems reasonable to just use the entire vaccine object) Create Object to pass into sorter (which picks which vaccine specific function to run)
         {
             vaccinationSchedule: [{}, ...],
             dosesReceived: int,
@@ -87,7 +84,7 @@ ___
             messages: "" (initialize for later use)
         }
 
-3. Sort (switch case) into correct vaccine specific function
+✓ 3. Sort (switch case) into correct vaccine specific function
     - Switch: object.options.vaccine
 
 (Now inside of vaccine specific function)
@@ -112,12 +109,12 @@ ___
                 notes: String, (Any notes, messages regarding this particular dose)
             }
 
-5. Pass this modified object into specific functions (below)
-    - Get same object back out at the end.
+✓ 5. Pass this modified object into specific functions (below)
+    ✓ Get same object back out at the end.
 
 6. Postprocessing: after specific functions:
-    - Compare intervals and minIntervals and raise early flags if needed
-    - If vaccines need to be given today, calculate new recommendedDate based on minInterval.
+    ✓ Compare intervals and minIntervals and raise early flags if needed
+    ✓ If vaccines need to be given today, calculate new recommendedDate based on minInterval.
     - Finalize everything before returning
 
 Example, if empty: Return the recommended schedule based on vaccine settings
@@ -213,17 +210,17 @@ __________
     - If more than 2 doses received:
         - notate in messages
 
-- Varicella
-- Recommended: 12-15M, 4-6Y
-    - Set Dose1.minInterval = 12M
-    - Set Dose2.minInterval = 3M
-    - If (Dose2.interval < 4W):
-        - raise early flag
-    - Else If (Dose2.interval >= 4W && Dose2.interval < 3M):
-        - raise early flag
-        - notate in messages: dose2 may be counted even if early.
-    - If more than 2 doses received:
-        - notate in messages
+✓ Varicella
+✓ Recommended: 12-15M, 4-6Y
+    ✓ Set Dose1.minInterval = 12M
+    ✓ Set Dose2.minInterval = 3M
+    ✓ If (Dose2.interval < 4W):
+        ✓ raise early flag
+    ✓ Else If (Dose2.interval >= 4W && Dose2.interval < 3M):
+        ✓ raise early flag
+        ✓ notate in messages: dose2 may be counted even if early.
+    ✓ If more than 2 doses received:
+        ✓ notate in messages
 
 - PCV13
 - Recommended: 2M, 4M, 6M, 12-15M
