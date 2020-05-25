@@ -117,30 +117,30 @@ ___
     ✓ If vaccines need to be given today, calculate new recommendedDate based on minInterval.
     - Finalize everything before returning
 
-Example, if empty: Return the recommended schedule based on vaccine settings
-    - This can include a fallback schedule, start today and follows reccommendations or minInterval which ever exists
+✓ Example, if empty: Return the recommended schedule based on vaccine settings
+    ✓ This can include a fallback schedule, start today and follows reccommendations or minInterval which ever exists (This happens now if it detects unreceived needed doses)
 
 __________
 -- specific functions for each vaccine --
 -- each vaccine can have it's own settings, like time series for CDC rec doses
 
-- Hepatitis A
-- Recommended: 12M, 18M
-    - Set Dose1.minInterval = 12M
-    - Set Dose2.minInterval = 6M
-    - If more than 2 doses received:
-        - notate in messages
+✓ Hepatitis A
+✓ Recommended: 12M, 18M
+    ✓ Set Dose1.minInterval = 12M
+    ✓ Set Dose2.minInterval = 6M
+    ✓ If more than 2 doses received:
+       ✓ notate in messages
 
 - Hepatitis B
-- Recommended: 0, 1-2M, 6-18M
-    - Set Dose2.minInterval = 4W
-    - Set Dose3.minInterval = 8W
-    - If more than 3 doses received:
-        - notate in messages: 4 doses permissible if used in mixed vaccines
-    - If Dose3.received && (Dose3.ageReceived) < 24 weeks || (Dose3.ageReceived - Dose1.ageReceived) < 16W:
-        - raise early flag
-        - notate in dose notes
-        - notate in messages: Dose3 too early and/or too close to Dose1
+✓ Recommended: 0, 1-2M, 6-18M
+    ✓ Set Dose2.minInterval = 4W
+    ✓ Set Dose3.minInterval = 8W
+    ✓ If more than 3 doses received:
+        ✓ notate in messages: 4 doses permissible if used in mixed vaccines
+    ✓ If Dose3.received && (Dose3.ageReceived) < 24 weeks || (Dose3.ageReceived - Dose1.ageReceived) < 16W:
+        ✓ raise early flag
+        ✓ notate in dose notes
+        ✓ notate in messages: Dose3 too early and/or too close to Dose1
 
 - DTAP
 - Recommended: 2M, 4M, 6M, 15-18M, 4-6Y
@@ -203,12 +203,12 @@ __________
     - If more than 4 doses received:
         - notate in messages
 
-- MMR
-- Recommended: 12-15M, 4-6Y
-    - Set Dose1.minInterval = 12M
-    - Set Dose2.minInterval = 4W
-    - If more than 2 doses received:
-        - notate in messages
+✓ MMR
+✓ Recommended: 12-15M, 4-6Y
+    ✓ Set Dose1.minInterval = 12M
+    ✓ Set Dose2.minInterval = 4W
+    ✓ If more than 2 doses received:
+        ✓ notate in messages
 
 ✓ Varicella
 ✓ Recommended: 12-15M, 4-6Y
