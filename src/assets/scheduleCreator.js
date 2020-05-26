@@ -156,7 +156,184 @@ function parseSchedule(vaccine, dateOfBirthISOString) {
 /* Vaccine Specific Schedulers */
 /* These return the entire updated vaccine object */
 function hibScheduler(vaccine, age, dateOfBirth) {
-    console.log(JSON.stringify(vaccine, null, 4));
+    // Get prp-omp or prp-t (both/unknown will lump with prp -t)
+    const isPRPOMP = vaccine.variant === "PRP-OMP (Pedvax)" ? true : false;
+
+
+    // CDC recommended age intervals for each dose (latest date)
+    const cdcRecommendedAgeIntervals = isPRPOMP
+        ? [dateOfBirth.plus({ months: 2 }), dateOfBirth.plus({ months: 4 }), dateOfBirth.plus({ months: 15 })]
+        : [dateOfBirth.plus({ months: 2 }), dateOfBirth.plus({ months: 4 }), dateOfBirth.plus({ months: 6 }), dateOfBirth.plus({ months: 15 })];
+
+    // Fill in gaps with empty doses
+    // 4 for prpomp for 3 doses check
+    while ((vaccine.schedule.length < 4 && isPRPOMP) || (vaccine.schedule.length < 4 && !isPRPOMP)) {
+        const dose = {
+            date: null,
+            latestRecommendedDate: null,
+            earliestPossibleDate: null,
+            received: false,
+            ageReceived: null,
+            intervalSinceLastDose: null,
+            minInterval: null,
+            late: false,
+            early: false,
+            required: true,
+            notes: ""
+        };
+
+        vaccine.schedule = [...vaccine.schedule, dose];
+    }
+
+    // Check for excess doses
+    if (vaccine.schedule.length > 3 && isPRPOMP) {
+        vaccine.notes = "Too many doses (3 dose series for HiB with PRP-OMP (PedVax)).";
+        vaccine.schedule.forEach((dose, index) => {
+            if (index > 1) {
+                dose.notes = "This is an extra dose! It is not required.";
+                dose.required = false;
+            }
+        });
+    } else if (vaccine.schedule.length > 4 && !isPRPOMP) {
+        vaccine.notes = "Too many doses (4 dose series for HiB with PRP-T (ActHIB, Hiberex, Pentacel) or Unknown/Mixed).";
+        vaccine.schedule.forEach((dose, index) => {
+            if (index > 1) {
+                dose.notes = "This is an extra dose! It is not required.";
+                dose.required = false;
+            }
+        });
+    }
+
+    // Set minIntervals
+    vaccine.schedule[0].minInterval = dur.fromObject({ months: 1, weeks: 2 });
+
+    // HiB Specific Min interval Checks
+    if (!vaccine.schedule[0].received
+        || vaccine.schedule[0].ageReceived.valueOf() < dur.fromObject({ years: 1 })) {
+        vaccine.schedule[1].minInterval = dur.fromObject({ months: 1 });
+    } else if (
+        vaccine.schedule[0].ageReceived.valueOf() >= dur.fromObject({ years: 1 })
+        && vaccine.schedule[0].ageReceived.valueOf() < dur.fromObject({ years: 1, months: 3 })
+    ) {
+        vaccine.schedule[1].minInterval = dur.fromObject({ months: 2 });
+        // No dose after 2 is necessary
+        vaccine.schedule.forEach((dose, index) => {
+            if (index > 1) {
+                dose.required = false;
+                dose.notes = "This dose is not required, Dose 1 received between 12 and 15 months of age. Only a second dose is required.";
+            }
+        });
+        vaccine.notes = "Only two doses will be required.";
+    } else {
+        // Fall back min interval based on CDC
+        vaccine.schedule[1].minInterval = dur.fromObject({ months: 2 });
+    }
+
+    if (
+        age.valueOf() < dur.fromObject({ months: 12 })
+        && vaccine.schedule[0].received
+        && vaccine.schedule[0].ageReceived.valueOf() < dur.fromObject({ months: 7 })
+        && !isPRPOMP
+    ) {
+        vaccine.schedule[2].minInterval = dur.fromObject({ months: 1 });
+    } else if (
+        vaccine.schedule[0].received
+        && vaccine.schedule[1].received
+        && (
+            (
+                age.valueOf() < dur.fromObject({ months: 12 })
+                && (
+                    vaccine.schedule[0].ageReceived.valueOf() >= dur.fromObject({ months: 7 })
+                    && vaccine.schedule[0].ageReceived.valueOf() < dur.fromObject({ months: 12 })
+                )
+            )
+            ||
+            (
+                age.valueOf() >= dur.fromObject({ months: 12 })
+                && age.valueOf() < dur.fromObject({ months: 60 })
+                && vaccine.schedule[0].ageReceived.valueOf() < dur.fromObject({ months: 12 })
+                && vaccine.schedule[1].ageReceived.valueOf() < dur.fromObject({ months: 15 })
+            )
+            ||
+            (
+                isPRPOMP
+                && vaccine.schedule[0].ageReceived.valueOf() < dur.fromObject({ months: 12 })
+                && vaccine.schedule[1].ageReceived.valueOf() < dur.fromObject({ months: 12 })
+            )
+        )
+    ) {
+        vaccine.schedule[2].minInterval = dur.fromObject({ months: 2 });
+        // No dose after 3 is neccesary
+        vaccine.schedule.forEach((dose, index) => {
+            if (index > 2) {
+                dose.required = false;
+                dose.notes = "This dose is not required, HiB dose 2 to dose 3 guidelines.";
+            }
+        });
+    } else {
+        // Fallback interval based on cdc 
+        vaccine.schedule[2].minInterval = dur.fromObject({ months: 2 });
+    }
+
+    if (
+        vaccine.schedule[0].received
+        && vaccine.schedule[1].received
+        && vaccine.schedule[2].received
+        && age.valueOf() >= dur.fromObject({ months: 12 })
+        && age.valueOf() < dur.fromObject({ months: 60 })
+        && vaccine.schedule[0].ageReceived.valueOf() < dur.fromObject({ months: 12 })
+        && vaccine.schedule[1].ageReceived.valueOf() < dur.fromObject({ months: 12 })
+        && vaccine.schedule[2].ageReceived.valueOf() < dur.fromObject({ months: 12 })
+    ) {
+        vaccine.schedule[3].minInterval = dur.fromObject({ months: 2 });
+        vaccine.schedule[3].notes = "Dose 4 should be given if child received 3 doses before their first birthday.";
+    } else {
+        // Fallback interval based on cdc
+        vaccine.schedule[3].minInterval = dur.fromObject({ months: 2 });
+    }
+
+    // Set recommended dates
+    cdcRecommendedAgeIntervals.forEach((doseDate, index) => {
+        vaccine.schedule[index].latestRecommendedDate = doseDate;
+    });
+
+    // Set earliest possible dates
+    // If first dose, min interval
+    // If subsequent dose AND prev received, date of prev plus min interval
+    // If subsequent dose AND prev NOT received, date of prev latestrec plus min interval
+    vaccine.schedule.forEach((dose, index) => {
+        if (index === 0) {
+            dose.earliestPossibleDate = dateOfBirth.plus(dose.minInterval)
+        } else {
+            dose.earliestPossibleDate = vaccine.schedule[index - 1].received
+                ? dt.fromISO(vaccine.schedule[index - 1].date).plus(dose.minInterval)
+                : vaccine.schedule[index - 1].latestRecommendedDate.plus(dose.minInterval);
+        }
+    });
+
+
+    // HiB Specific Checks
+    if (
+        vaccine.schedule[1].received
+        && (vaccine.schedule[0].ageReceived.valueOf() >= dur.fromObject({ months: 15 }) || vaccine.schedule[1].ageReceived.valueOf() >= dur.fromObject({ months: 15 }))
+    ) {
+        vaccine.schedule.forEach(dose => {
+            if (!dose.received) {
+                dose.required = false;
+                dose.notes = "No further vaccination is required. Patient received dose 1 or 2 at or later than 15 months.";
+            }
+        });
+    }
+
+    if (age.valueOf() >= dur.fromObject({ months: 60 }) && !vaccine.schedule[0].received) {
+        vaccine.notes = "Too late for series, do not start. No further vaccination is required.";
+        vaccine.schedule.forEach(dose => {
+            dose.required = false;
+            dose.notes = "No vaccination required, too late to start series."
+        });
+    }
+
+    return vaccine;
 }
 
 function hepAScheduler(vaccine, age, dateOfBirth) {
@@ -439,7 +616,7 @@ function rotavirusScheduler(vaccine, age, dateOfBirth) {
     vaccine.schedule[0].minInterval = dur.fromObject({ months: 1, weeks: 2 });
     vaccine.schedule[1].minInterval = dur.fromObject({ months: 1 });
     if (!isRotarix) {
-        vaccine.schedule[2].minInterval = dur.fromObject({ months: 1});
+        vaccine.schedule[2].minInterval = dur.fromObject({ months: 1 });
     }
 
 
@@ -780,13 +957,26 @@ function pcv13Scheduler(vaccine, age, dateOfBirth) {
 //     notes: ""
 // }, "2010-05-24");
 
+// const testSchedule = parseSchedule({
+//     name: "Rotavirus",
+//     variants: ["Rotateq", "Rotarix", "Both/Unknown"],
+//     variant: "Rotateq",
+//     datesReceived: ["2020-05-29"],
+//     schedule: [],
+//     notes: ""
+// }, "2020-03-24");
+
 const testSchedule = parseSchedule({
-    name: "Rotavirus",
-    variants: ["Rotateq", "Rotarix", "Both/Unknown"],
-    variant: "Rotateq",
-    datesReceived: ["2020-05-29"],
+    name: "HiB",
+    variants: [
+        "PRP-OMP (Pedvax)",
+        "PRP-T (ActHIB, Hiberex, Pentacel)",
+        "Both/Unknown"
+    ],
+    variant: "PRP-T (ActHIB, Hiberex, Pentacel)",
+    datesReceived: [],
     schedule: [],
     notes: ""
-}, "2020-03-24");
+}, "2020-05-24");
 
 console.log(testSchedule);
