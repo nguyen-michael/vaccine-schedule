@@ -156,36 +156,36 @@ __________
         ✓ notate in dose notes
         ✓ set flags of following doses as needed
 
-- HiB
-- Recommended: 2M, 4M, 6M (HiB-PRP-T), 12-15M
-    - Set flag: PRP-OMP or PRP-T or Unknown
-    - Set Dose1.minInterval = 6W
-    - If Dose2.received && (Dose1.ageReceived >= 15M || Dose2.ageReceived >= 15M):
-        - notate in messages: no further doses needed. Done with vaccination series
-        - notate in dose notes
-        - set flags as neccesary in following doses
-    - If (Dose1.ageReceived <= 12M):
-        - Set Dose2.minInterval = 4W
-    - Else If (Dose1.ageReceived >= 12M && Dose1.ageReceived <= 14M):
-        - Set Dose2.minInterval = 8W
-        - Notate in messages: no further doses after dose2 needed.
-        - set flags as neccesary
-        - notate in dose notes
-    - If (Age < 12M && Dose1.ageReceived < 7M && !PRP-OMP):
-        - Set Dose3.minInterval = 4W
-    - Else If (Age < 12M && (Dose1.ageReceived >= 7M && Dose1.ageReceived < 12M)) || (Age >= 12M && Age <= 59M && Dose1.ageReceived < 12M && Dose2.ageReceived < 15M) || (PRP-OMP && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M):
-        - Set Dose3.minInterval = 8W
-        - Notate in messages: no further doses after dose3 needed.
-        - set flags as neccesary
-        - notate in dose notes
-    - If (Age >= 12M && Age < 60M && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M && Dose3.ageReceived < 12M):
-        - Set Dose4.minInterval = 8W
-    - If (Age >= 60M && !Dose1.received):
-        - Notate in messages: Too late for series. No further vaccination required.
-        - set flags as needed on all further vaccinations
-    - If More than 4 doses received:
+✓ HiB
+✓ Recommended: 2M, 4M, 6M (HiB-PRP-T), 12-15M
+    ✓ Set flag: PRP-OMP or PRP-T or Unknown
+    ✓ Set Dose1.minInterval = 6W
+    ✓ If Dose2.received && (Dose1.ageReceived >= 15M || Dose2.ageReceived >= 15M):
+        ✓ notate in messages: no further doses needed. Done with vaccination series
+        ✓ notate in dose notes
+        ✓ set flags as neccesary in following doses
+    ✓ If (Dose1.ageReceived <= 12M):
+        ✓ Set Dose2.minInterval = 4W
+    ✓ Else If (Dose1.ageReceived >= 12M && Dose1.ageReceived < 15M):
+       ✓ Set Dose2.minInterval = 8W
+        ✓ Notate in messages: no further doses after dose2 needed.
+        ✓ set flags as neccesary
+        ✓ notate in dose notes
+    ✓ If (Age < 12M && Dose1.ageReceived < 7M && !PRP-OMP):
+       ✓ Set Dose3.minInterval = 4W
+    ✓ Else If (Age < 12M && (Dose1.ageReceived >= 7M && Dose1.ageReceived < 12M)) || (Age >= 12M && Age < 60M && Dose1.ageReceived < 12M && Dose2.ageReceived < 15M) || (PRP-OMP && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M):
+        ✓ Set Dose3.minInterval = 8W
+        ✓ Notate in messages: no further doses after dose3 needed.
+        ✓ set flags as neccesary
+        ✓ notate in dose notes
+    ✓ If (Age >= 12M && Age < 60M && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M && Dose3.ageReceived < 12M):
+        ✓ Set Dose4.minInterval = 8W
+    ✓ If (Age >= 60M && !Dose1.received):
+        ✓ Notate in messages: Too late for series. No further vaccination required.
+        ✓ set flags as needed on all further vaccinations
+    ✓ If More than 4 doses received:
         - notate in messages
-    - If More than 3 doses received && PRP-OMP:
+    ✓ If More than 3 doses received && PRP-OMP:
         - notate in messages
     
 ✓ IPV
@@ -223,33 +223,33 @@ __________
     ✓ If more than 2 doses received:
         ✓ notate in messages
 
-- PCV13
-- Recommended: 2M, 4M, 6M, 12-15M
-    - Set Dose1.minInterval = 6W
-    - If (Dose1.ageReceived >= 24M || Dose2.ageReceived >= 24):
-        - Notate in messages: no further doses needed.
-        - set flags as neccesary
-        - notate in dose notes
-    - If (Dose1.ageReceived < 12M):
-        - Set Dose2.minInterval = 4W
-    - Else If (Dose1.ageReceived >= 12M):
-        - Set Dose2.minInterval = 8W
-        - Notate in messages: no further dose neccesary after dose 2
-    - If (Age < 12M && Dose2.ageReceived < 7M):
-        - Set Dose3.minInterval = 4W
-    - Else If (Dose2.ageReceived >= 7M && Dose2.ageReceived < 12M):
-        - Set Dose3.minInterval = 12M - Age <= 8W ? 8W : 12M - Age
-    - If (Age >= 12M && [Any Dose Given].ageReceived < 12M):
-        - Reset Dose2.minInterval = 8W
-        - Reset Dose3.minInterval = 8W
-    - If (Age >= 12M && Age < 60M && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M && Dose3.ageReceived < 12M):
-        - Set Dose4.minInterval = 8W  
-    - If (Age >= 60M):
-        - Notate in messages: No Further Doses needed unless high risk.
-        - Notate in dose notes
-        - Set Flags as needed
-    - If more than 4 doses received:
-        - notate in messages
+✓ PCV13
+✓ Recommended: 2M, 4M, 6M, 12-15M
+    ✓ Set Dose1.minInterval = 6W
+    ✓ If (Dose1.ageReceived >= 24M || Dose2.ageReceived >= 24):
+        ✓ Notate in messages: no further doses needed.
+        ✓ set flags as neccesary
+        ✓ notate in dose notes
+    ✓ If (Dose1.ageReceived < 12M):
+        ✓ Set Dose2.minInterval = 4W
+    ✓ Else If (Dose1.ageReceived >= 12M):
+       ✓ Set Dose2.minInterval = 8W
+        ✓ Notate in messages: no further dose neccesary after dose 2
+    ✓ If (Age < 12M && Dose2.ageReceived < 7M):
+        ✓ Set Dose3.minInterval = 4W
+   ✓ Else If (Dose2.ageReceived >= 7M && Dose2.ageReceived < 12M):
+        ✓ Set Dose3.minInterval = 12M - Age <= 8W ? 8W : 12M - Age
+    ✓ If (Age >= 12M && [Any Dose Given].ageReceived < 12M):
+        ✓ Reset Dose2.minInterval = 8W
+        ✓ Reset Dose3.minInterval = 8W
+    ✓ If (Age >= 12M && Age < 60M && Dose1.ageReceived < 12M && Dose2.ageReceived < 12M && Dose3.ageReceived < 12M):
+        ✓ Set Dose4.minInterval = 8W  
+    ✓ If (Age >= 60M):
+        ✓ Notate in messages: No Further Doses needed unless high risk.
+        ✓ Notate in dose notes
+        ✓ Set Flags as needed
+    ✓ If more than 4 doses received:
+        ✓ notate in messages
 
 ✓ Rotavirus
 ✓ Recommended: 2M, 4M, 6M (RotaTeq)

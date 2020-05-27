@@ -872,7 +872,126 @@ function mmrScheduler(vaccine, age, dateOfBirth) {
 }
 
 function pcv13Scheduler(vaccine, age, dateOfBirth) {
-    console.log(JSON.stringify(vaccine, null, 4));
+    // CDC recommended age intervals for each dose (latest date)
+    const cdcRecommendedAgeIntervals = [
+        dateOfBirth.plus({ months: 2 }),
+        dateOfBirth.plus({ months: 4 }),
+        dateOfBirth.plus({ months: 6 }),
+        dateOfBirth.plus({ months: 15 })
+    ];
+
+    // Fill in gaps with empty doses
+    while (vaccine.schedule.length < 4) {
+        const dose = {
+            date: null,
+            latestRecommendedDate: null,
+            earliestPossibleDate: null,
+            received: false,
+            ageReceived: null,
+            intervalSinceLastDose: null,
+            minInterval: null,
+            late: false,
+            early: false,
+            required: true,
+            notes: ""
+        };
+
+        vaccine.schedule = [...vaccine.schedule, dose];
+    }
+
+    // Check for excess doses
+    if (vaccine.schedule.length > 4) {
+        vaccine.notes = "Too many doses (4 dose series for PCV13)";
+        vaccine.schedule.forEach((dose, index) => {
+            if (index > 1) {
+                dose.notes = "This is an extra dose! It is not required.";
+                dose.required = false;
+            }
+        });
+    }
+
+    // Set minIntervals
+    vaccine.schedule[0].minInterval = dur.fromObject({ months: 1, weeks: 2 });
+    vaccine.schedule[1].minInterval = dur.fromObject({ months: 2 });
+    vaccine.schedule[2].minInterval = dur.fromObject({ months: 2 });
+    vaccine.schedule[3].minInterval = dur.fromObject({ months: 2 });
+
+    // PCV13 Specific interval checks
+    if (vaccine.schedule[0].received && vaccine.schedule[0].ageReceived.valueOf() < dur.fromObject({ months: 12 })) {
+        vaccine.schedule[1].minInterval = dur.fromObject({ months: 1 });
+    } else if (vaccine.schedule[0].received && vaccine.schedule[0].ageReceived.valueOf() >= dur.fromObject({ months: 12 })) {
+        // Leave dose 2 at 2 months, no further dose needed
+        vaccine.schedule.forEach((dose, index) => {
+            if (index > 2) {
+                dose.required = false;
+                dose.notes = "First dose received after first birthday, no further doses required.";
+            }
+        });
+    }
+
+    if (vaccine.schedule[1].received && age.valueOf() < dur.fromObject({ months: 12 }) && vaccine.schedule[1].ageReceived.valueOf() < dur.fromObject({ months: 7 })) {
+        vaccine.schedule[2].minInterval = dur.fromObject({ months: 1 });
+    } else if (vaccine.schedule[1].received && vaccine.schedule[1].ageReceived.valueOf() >= dur.fromObject({ months: 7 }) && vaccine.schedule[1].ageReceived.valueOf() < dur.fromObject({ months: 12 })) {
+        vaccine.schedule[2].minInterval = (dur.fromObject({ months: 12 }).valueOf() - age.valueOf()) <= dur.fromObject({ months: 2 }).valueOf() ? dur.fromObject({ months: 2 }) : dur.fromMillis((dur.fromObject({ months: 12 }).valueOf() - age.valueOf()));
+    }
+
+    if (
+        age.valueOf() >= (dur.fromObject({ months: 12 })
+            && (vaccine.schedule[0].received && vaccine.schedule[0].ageReceived.valueOf() < dur.fromObject({ months: 12 }))
+            || (vaccine.schedule[1].received && vaccine.schedule[1].ageReceived.valueOf() < dur.fromObject({ months: 12 }))
+        )
+    ) {
+        vaccine.schedule[1].minInterval = dur.fromObject({ months: 2 });
+        vaccine.schedule[2].minInterval = dur.fromObject({ months: 2 });
+    }
+
+
+    // Set recommended dates
+    cdcRecommendedAgeIntervals.forEach((doseDate, index) => {
+        vaccine.schedule[index].latestRecommendedDate = doseDate;
+    });
+
+    // Set earliest possible dates
+    // If first dose, min interval
+    // If subsequent dose AND prev received, date of prev plus min interval
+    // If subsequent dose AND prev NOT received, date of prev latestrec plus min interval
+    vaccine.schedule.forEach((dose, index) => {
+        if (index === 0) {
+            dose.earliestPossibleDate = dateOfBirth.plus(dose.minInterval)
+        } else {
+            dose.earliestPossibleDate = vaccine.schedule[index - 1].received
+                ? dt.fromISO(vaccine.schedule[index - 1].date).plus(dose.minInterval)
+                : vaccine.schedule[index - 1].latestRecommendedDate.plus(dose.minInterval);
+        }
+    });
+
+
+    // PCV13 Specific Checks
+    if (
+        (vaccine.schedule[0].received && vaccine.schedule[0].ageReceived >= dur.fromObject({ months: 24 }))
+        ||
+        (vaccine.schedule[1].received && vaccine.schedule[1].ageReceived >= dur.fromObject({ months: 24 }))
+    ) {
+        vaccine.notes = "First or second dose received after 2 years of age. No further doses required.";
+        vaccine.schedule.forEach(dose => {
+            if (!dose.received) {
+                dose.required = false;
+                dose.notes = "Dose not required (Dose 1 or Dose 2 received after 2 years of age)";
+            }
+        });
+    }
+
+    if (age.valueOf() > dur.fromObject({ months: 60 })) {
+        vaccine.notes = "Patient over 5 years old; no further doses required.";
+        vaccine.schedule.forEach(dose => {
+            if (!dose.received) {
+                dose.required = false;
+                dose.notes = "Dose not required (patient over 5 years old).";
+            }
+        });
+    }
+
+    return vaccine;
 }
 
 /* Test runs */
@@ -966,17 +1085,26 @@ function pcv13Scheduler(vaccine, age, dateOfBirth) {
 //     notes: ""
 // }, "2020-03-24");
 
+// const testSchedule = parseSchedule({
+//     name: "HiB",
+//     variants: [
+//         "PRP-OMP (Pedvax)",
+//         "PRP-T (ActHIB, Hiberex, Pentacel)",
+//         "Both/Unknown"
+//     ],
+//     variant: "PRP-T (ActHIB, Hiberex, Pentacel)",
+//     datesReceived: [],
+//     schedule: [],
+//     notes: ""
+// }, "2020-05-24");
+
 const testSchedule = parseSchedule({
-    name: "HiB",
-    variants: [
-        "PRP-OMP (Pedvax)",
-        "PRP-T (ActHIB, Hiberex, Pentacel)",
-        "Both/Unknown"
-    ],
-    variant: "PRP-T (ActHIB, Hiberex, Pentacel)",
-    datesReceived: [],
+    name: "PCV13",
+    variants: null,
+    variant: null,
+    datesReceived: ["2018-05-24"],
     schedule: [],
     notes: ""
-}, "2020-05-24");
+}, "2016-05-24");
 
 console.log(testSchedule);
