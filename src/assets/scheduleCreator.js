@@ -1013,7 +1013,7 @@ function pcv13Scheduler(vaccine, age, dateOfBirth) {
     return vaccine;
 }
 
-// export default parseSchedule;
+export default parseSchedule;
 
 /* Test runs */
 // const testSchedule = parseSchedule({
@@ -1119,13 +1119,13 @@ function pcv13Scheduler(vaccine, age, dateOfBirth) {
 //     notes: ""
 // }, "2020-05-24");
 
-const testSchedule = parseSchedule({
-    name: "PCV13",
-    variants: null,
-    variant: null,
-    datesReceived: ["2018-05-24"],
-    schedule: [],
-    notes: ""
-}, "2016-05-24");
+// const testSchedule = parseSchedule({
+//     name: "PCV13",
+//     variants: null,
+//     variant: null,
+//     datesReceived: ["2018-05-24"],
+//     schedule: [],
+//     notes: ""
+// }, "2016-05-24");
 
-console.log(testSchedule);
+// console.log(testSchedule);
