@@ -2,21 +2,16 @@
   <v-app>
     <p class="display-1 text-center">Vax Check!</p>
     <v-expansion-panels>
-      <the-date-of-birth-entry 
-        :date-of-birth="dateOfBirth" 
-        @change:date="updateDOB" 
-      />
+      <the-date-of-birth-entry :date-of-birth="dateOfBirth" @change:date="updateDOB" />
     </v-expansion-panels>
     <v-card>
-      <v-card-title class="my-2" >
-        Enter dates for received doses:
-      </v-card-title>
+      <v-card-title class="my-2">Enter dates for received doses:</v-card-title>
     </v-card>
     <v-expansion-panels multiple>
-      <vaccine-entry 
-        v-for="(vaccine, i) in this.vaccines" 
-        :key="vaccine.name" 
-        :vaccine="vaccine" 
+      <vaccine-entry
+        v-for="(vaccine, i) in this.vaccines"
+        :key="vaccine.name"
+        :vaccine="vaccine"
         :date-of-birth="dateOfBirth"
         :index="i"
         @update:variant="updateVariant"
@@ -24,16 +19,10 @@
       />
     </v-expansion-panels>
     <v-card>
-      <v-card-title class="my-2" >
-        Vaccine Schedule:
-      </v-card-title>
+      <v-card-title class="my-2">Vaccine Schedule:</v-card-title>
     </v-card>
-    <v-expansion-panels>
-      <vaccine-panel 
-        v-for="vaccine in this.vaccines"
-        :key="vaccine.name"
-        :vaccine="vaccine"
-      />
+    <v-expansion-panels multiple>
+      <vaccine-panel v-for="vaccine in this.vaccines" :key="vaccine.name" :vaccine="vaccine" />
     </v-expansion-panels>
   </v-app>
 </template>
@@ -42,6 +31,7 @@
 import TheDateOfBirthEntry from "./components/TheDateOfBirthEntry.vue";
 import VaccineEntry from "./components/VaccineEntry.vue";
 import VaccinePanel from "./components/VaccinePanel.vue";
+import parseSchedule from "./assets/scheduleCreator.js";
 
 export default {
   name: "App",
@@ -53,7 +43,7 @@ export default {
   },
 
   data: () => ({
-    dateOfBirth: new Date().toLocaleString('sv').substr(0, 10),
+    dateOfBirth: new Date().toLocaleString("sv").substr(0, 10),
     vaccines: [
       {
         name: "HiB",
@@ -65,7 +55,7 @@ export default {
         variant: null,
         datesReceived: [],
         schedule: [],
-        notes: "notes specific to entire vaccine."
+        notes: ""
       },
       {
         name: "HepA",
@@ -73,7 +63,7 @@ export default {
         variant: null,
         datesReceived: [],
         schedule: [],
-        notes: "notes specific to entire vaccine."
+        notes: ""
       },
       {
         name: "HepB",
@@ -81,7 +71,7 @@ export default {
         variant: null,
         datesReceived: [],
         schedule: [],
-        notes: "notes specific to entire vaccine."
+        notes: ""
       },
       {
         name: "IPV",
@@ -89,7 +79,7 @@ export default {
         variant: null,
         datesReceived: [],
         schedule: [],
-        notes: "notes specific to entire vaccine."
+        notes: ""
       },
       {
         name: "Rotavirus",
@@ -97,7 +87,7 @@ export default {
         variant: null,
         datesReceived: [],
         schedule: [],
-        notes: "notes specific to entire vaccine."
+        notes: ""
       },
       {
         name: "DTAP",
@@ -105,7 +95,7 @@ export default {
         variant: null,
         datesReceived: [],
         schedule: [],
-        notes: "notes specific to entire vaccine."
+        notes: ""
       },
       {
         name: "Varicella",
@@ -113,7 +103,7 @@ export default {
         variant: null,
         datesReceived: [],
         schedule: [],
-        notes: "notes specific to entire vaccine."
+        notes: ""
       },
       {
         name: "MMR",
@@ -121,7 +111,7 @@ export default {
         variant: null,
         datesReceived: [],
         schedule: [],
-        notes: "notes specific to entire vaccine."
+        notes: ""
       },
       {
         name: "PCV13",
@@ -129,7 +119,7 @@ export default {
         variant: null,
         datesReceived: [],
         schedule: [],
-        notes: "notes specific to entire vaccine."
+        notes: ""
       }
     ]
   }),
@@ -137,28 +127,42 @@ export default {
   methods: {
     updateDOB(date) {
       this.dateOfBirth = date;
+      this.vaccines.forEach(vaccine => {
+        parseSchedule(vaccine, this.dateOfBirth);
+      });
     },
 
     updateVariant(variant, index) {
       this.vaccines[index].variant = variant;
+      this.vaccines[index] = parseSchedule(
+        this.vaccines[index],
+        this.dateOfBirth
+      );
     },
 
     updateDatesReceived(dateList, index) {
       this.vaccines[index].datesReceived = dateList;
-      this.vaccines[index].schedule = dateList.map((date) => {
-        return {
-            date: date,
-            latestRecommendedDate: null,
-            received: true,
-            ageReceived: null, // in months?
-            intervalSinceLastDose: null,
-            minInterval: null,
-            late: false,
-            early: false,
-            required: true,
-            notes: "notes specific to this dose."
-          };
-      });
+
+      // run the vaccine parsing here:
+      // this.vaccines[index].schedule = dateList.map((date) => {
+      //   return {
+      //       date: date,
+      //       latestRecommendedDate: null,
+      //       received: true,
+      //       ageReceived: null, // in months?
+      //       intervalSinceLastDose: null,
+      //       minInterval: null,
+      //       late: false,
+      //       early: false,
+      //       required: true,
+      //       notes: "notes specific to this dose."
+      //     };
+      // });
+
+      this.vaccines[index] = parseSchedule(
+        this.vaccines[index],
+        this.dateOfBirth
+      );
     }
   }
 };
