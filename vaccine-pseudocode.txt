@@ -90,11 +90,11 @@ ___
 (Now inside of vaccine specific function)
 
 4. Preprocess vaccine dates (process dates specific to each vaccine definition):
-    - Generate recommendedDates array (scoped to function) based on CDC recommendations
-        - Use latest date if given ranges
-        - Add each recommended interval to Birthdate and append to array 
-    - Populate the rest of the vaccinationSchedule with list of recommendedDates 
-        - Generate new schedule objects if they dont already exist:
+    ✓ Generate recommendedDates array (scoped to function) based on CDC recommendations
+        ✓ Use latest date if given ranges
+        ✓ Add each recommended interval to Birthdate and append to array 
+    ✓ Populate the rest of the vaccinationSchedule with list of recommendedDates 
+        ✓ Generate new schedule objects if they dont already exist:
             {
                 dose: next value,
                 date: current date if received or null if not.

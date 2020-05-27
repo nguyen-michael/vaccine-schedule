@@ -145,6 +145,8 @@ export default {
 
     updateDatesReceived(dateList, index) {
       this.vaccines[index].datesReceived = dateList;
+
+      // run the vaccine parsing here:
       this.vaccines[index].schedule = dateList.map((date) => {
         return {
             date: date,

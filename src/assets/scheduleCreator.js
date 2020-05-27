@@ -148,6 +148,25 @@ function parseSchedule(vaccine, dateOfBirthISOString) {
     });
 
     // Convert to ISO string before sending back out or object if it's easier (the durations)
+    vaccine.schedule.forEach(dose => {
+        if (dose.latestRecommendedDate) {
+            dose.latestRecommendedDate = dose.latestRecommendedDate.toISODate();
+        }
+
+        if (dose.earliestPossibleDate) {
+            dose.earliestPossibleDate = dose.earliestPossibleDate.toISODate();
+        }
+
+        if (dose.received) {
+            dose.intervalSinceLastDose = dose.intervalSinceLastDose.toObject();
+            dose.ageReceived = dose.ageReceived.toObject();
+        }
+
+        if (dose.minInterval) {
+            dose.minInterval = dose.minInterval.toObject();
+        }
+
+    });
 
     console.log(JSON.stringify(vaccine, null, 4));
     return vaccine;
@@ -993,6 +1012,8 @@ function pcv13Scheduler(vaccine, age, dateOfBirth) {
 
     return vaccine;
 }
+
+// export default parseSchedule;
 
 /* Test runs */
 // const testSchedule = parseSchedule({
