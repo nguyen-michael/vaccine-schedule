@@ -141,6 +141,8 @@ function parseSchedule(vaccine, dateOfBirthISOString) {
             for (var i = index + 1; i < arr.length; i++) {
                 if (vaccine.schedule[i].required) {
                     vaccine.schedule[i].earliestPossibleDate = vaccine.schedule[i - 1].latestRecommendedDate.plus(vaccine.schedule[i].minInterval);
+                    // Modify Latest date to match as well
+                    vaccine.schedule[i].latestRecommendedDate = vaccine.schedule[i].earliestPossibleDate;
                     vaccine.schedule[i].notes = vaccine.schedule[i].notes.length === 0 ? "This dose succeeds a late dose; earliest possible date adjusted." : vaccine.schedule[i].notes.concat(" This dose succeeds a late dose; earliest possible date adjusted.");
                 }
             }
@@ -168,7 +170,7 @@ function parseSchedule(vaccine, dateOfBirthISOString) {
 
     });
 
-    console.log(JSON.stringify(vaccine, null, 4));
+    // console.log(JSON.stringify(vaccine, null, 4));
     return vaccine;
 }
 

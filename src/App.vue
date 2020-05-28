@@ -1,13 +1,13 @@
 <template>
   <v-app>
     <p class="display-1 text-center">Vax Check!</p>
-    <v-expansion-panels>
+    <v-expansion-panels accordion tile>
       <the-date-of-birth-entry :date-of-birth="dateOfBirth" @change:date="updateDOB" />
     </v-expansion-panels>
     <v-card>
       <v-card-title class="my-2">Enter dates for received doses:</v-card-title>
     </v-card>
-    <v-expansion-panels multiple>
+    <v-expansion-panels accordion tile multiple>
       <vaccine-entry
         v-for="(vaccine, i) in this.vaccines"
         :key="vaccine.name"
@@ -21,7 +21,7 @@
     <v-card>
       <v-card-title class="my-2">Vaccine Schedule:</v-card-title>
     </v-card>
-    <v-expansion-panels multiple>
+    <v-expansion-panels accordion tile multiple>
       <vaccine-panel v-for="vaccine in this.vaccines" :key="vaccine.name" :vaccine="vaccine" />
     </v-expansion-panels>
   </v-app>
@@ -142,23 +142,6 @@ export default {
 
     updateDatesReceived(dateList, index) {
       this.vaccines[index].datesReceived = dateList;
-
-      // run the vaccine parsing here:
-      // this.vaccines[index].schedule = dateList.map((date) => {
-      //   return {
-      //       date: date,
-      //       latestRecommendedDate: null,
-      //       received: true,
-      //       ageReceived: null, // in months?
-      //       intervalSinceLastDose: null,
-      //       minInterval: null,
-      //       late: false,
-      //       early: false,
-      //       required: true,
-      //       notes: "notes specific to this dose."
-      //     };
-      // });
-
       this.vaccines[index] = parseSchedule(
         this.vaccines[index],
         this.dateOfBirth

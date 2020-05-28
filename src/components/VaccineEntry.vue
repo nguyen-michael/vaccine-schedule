@@ -1,7 +1,17 @@
 <template>
   <v-expansion-panel>
     <v-expansion-panel-header>
-      {{ vaccine.name }} <span v-if="this.dateList.length > 0">{{ this.dateList.length }} dates entered</span>
+      <v-row no-gutters>
+        <v-col cols="4">{{ vaccine.name }}</v-col>
+        <v-col cols="4">
+          <span
+            v-if="this.dateList.length > 0"
+          >{{ this.dateList.length }} {{ this.dateList.length === 1 ? "date" : "dates"}} entered</span>
+        </v-col>
+        <v-col cols="4">
+          <span v-if="this.variant">{{ this.variant.split(" ")[0] }}</span>
+        </v-col>
+      </v-row>
     </v-expansion-panel-header>
     <v-expansion-panel-content>
       <v-select
@@ -19,17 +29,15 @@
       >
         <v-btn text color="primary" @click="handleAddDate()">Add Vaccination Date</v-btn>
       </v-date-picker>
-      <v-alert type="warning" dismissible v-model="alert">
-        {{ message }}
-      </v-alert>
+      <v-alert type="warning" dismissible v-model="alert">{{ message }}</v-alert>
       <v-list dense>
         <v-subheader>Selected Dates</v-subheader>
-        <v-list-item 
-          v-for="(date, i) in dateList" 
-          :key="i"
-        >
+        <v-list-item v-for="(date, i) in dateList" :key="i">
           <v-list-item-content>
-            <span>{{ date }}<v-btn outlined small :value="i" @click="handleDeleteDate">Delete</v-btn></span>
+            <span>
+              {{ date }}
+              <v-btn outlined small :value="i" @click="handleDeleteDate(i)">Delete</v-btn>
+            </span>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -48,7 +56,7 @@ export default {
   },
 
   data: () => ({
-    date: new Date().toLocaleString('sv').substr(0, 10),
+    date: new Date().toLocaleString("sv").substr(0, 10),
     dateList: [],
     variant: null,
     alert: false,
@@ -75,7 +83,7 @@ export default {
         this.alert = true;
         return;
       }
-      
+
       this.alert = false;
       this.dateList = [...this.dateList, this.date].sort();
       this.$emit("update:date-received", this.dateList, this.index);
