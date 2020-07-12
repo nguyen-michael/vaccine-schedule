@@ -21,18 +21,14 @@
         label="Choose variant received"
         @change="handleAddVariant"
       ></v-select>
-      <v-text-field
-        v-model="date"
-        placeholder="Enter Date or Choose below"
-      ></v-text-field>
+      <v-text-field v-model="date" placeholder="Enter Date or Choose below"></v-text-field>
+      <v-btn text color="primary" @click="handleAddDate()">Add Vaccination Date</v-btn>
       <v-date-picker
         v-model="date"
         :reactive="true"
         :min="dateOfBirth"
         :max="new Date().toLocaleString('sv').substr(0, 10)"
-      >
-        <v-btn text color="primary" @click="handleAddDate()">Add Vaccination Date</v-btn>
-      </v-date-picker>
+      ></v-date-picker>
       <v-alert type="warning" dismissible v-model="alert">{{ message }}</v-alert>
       <v-list dense>
         <v-subheader>Selected Dates</v-subheader>
