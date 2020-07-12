@@ -6,6 +6,11 @@
       </span> {{ dateOfBirth }}
       </v-expansion-panel-header>
     <v-expansion-panel-content>
+      <v-text-field
+        v-model="date"
+        @input="handleDOBChange"
+        placeholder="Enter Date or Choose below"
+      ></v-text-field>
       <v-date-picker
         v-model="date"
         :reactive="true"

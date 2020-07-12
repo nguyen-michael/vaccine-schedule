@@ -21,6 +21,10 @@
         label="Choose variant received"
         @change="handleAddVariant"
       ></v-select>
+      <v-text-field
+        v-model="date"
+        placeholder="Enter Date or Choose below"
+      ></v-text-field>
       <v-date-picker
         v-model="date"
         :reactive="true"
