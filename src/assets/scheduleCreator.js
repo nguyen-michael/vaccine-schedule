@@ -662,13 +662,22 @@ function rotavirusScheduler(vaccine, age, dateOfBirth) {
 
 
     // Rotavirus Specific Checks
-    if (age.valueOf() > dur.fromObject({ months: 8 })) {
+    if (age.valueOf() > dur.fromObject({ weeks: 15 }) && !vaccine.schedule[0].received) {
         vaccine.schedule.forEach(dose => {
             dose.notes = "No further vaccination is needed.";
             dose.required = false;
         });
 
-        vaccine.notes = "Patient is older than 8 months, no further rotavirus vaccines required.";
+        vaccine.notes = "Patient is older than 15 weeks, do not start vaccine series, none needed.";
+    }
+
+    if (age.valueOf() > dur.fromObject({ months: 8 }) && vaccine.schedule[0].received) {
+        vaccine.schedule.forEach(dose => {
+            dose.notes = "No further vaccination is needed.";
+            dose.required = false;
+        });
+
+        vaccine.notes = "Patient is older than 8 weeks, no further vaccination needed.";
     }
 
     return vaccine;
